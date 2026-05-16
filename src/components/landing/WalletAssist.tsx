@@ -108,7 +108,7 @@ export function WalletAssist() {
 
 function BrowserStage({ step }: { step: number }) {
   return (
-    <div className="relative">
+    <div className="dark relative bg-transparent text-foreground">
       <div className="rounded-3xl border border-foreground/10 bg-card text-card-foreground shadow-card overflow-hidden">
         <div className="flex items-center gap-2 px-5 py-3 border-b border-foreground/10">
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--pink)]" />
