@@ -75,3 +75,135 @@ export const payoutBatch = {
     { id: "p6", name: "Leo Vargas", address: "0x2c08...18df", amount: 6400, status: "Queued" as const },
   ],
 };
+
+// ============================
+// AI Agents
+// ============================
+
+export type AgentStatus = "Active" | "Paused" | "Connecting";
+export type AgentConnection = "Agent API" | "MCP Server" | "Sandbox";
+
+export type Agent = {
+  id: string;
+  agentId: string; // public agent ID exposed to API/MCP
+  name: string;
+  persona: string;
+  wallet: string;
+  status: AgentStatus;
+  connection: AgentConnection;
+  monthlySpend: number;
+  monthlyLimit: number;
+  lastActivity: string;
+  pendingIntents: number;
+  confirmed30d: number;
+  failed30d: number;
+};
+
+export type AgentTxStatus = "Confirmed" | "Pending" | "Failed" | "Awaiting Sign";
+
+export type AgentSpend = {
+  id: string;
+  agentId: string;
+  taskId: string;
+  tool: string;
+  reason: string;
+  recipient: string;
+  amount: number;
+  token: "USDC" | "USDT" | "PYUSD" | "DAI";
+  status: AgentTxStatus;
+  txHash: string;
+  timestamp: string;
+  category: TxCategory | "API Usage" | "Compute" | "Data" | "Subscription";
+  note: string;
+};
+
+export const agents: Agent[] = [
+  {
+    id: "a1",
+    agentId: "agt_orion_4f9a",
+    name: "Orion",
+    persona: "Procurement & vendor renewals",
+    wallet: "0x4f2a…9a12",
+    status: "Active",
+    connection: "MCP Server",
+    monthlySpend: 4820,
+    monthlyLimit: 8000,
+    lastActivity: "2 min ago",
+    pendingIntents: 2,
+    confirmed30d: 31,
+    failed30d: 1,
+  },
+  {
+    id: "a2",
+    agentId: "agt_atlas_91bd",
+    name: "Atlas",
+    persona: "Research · data & API spend",
+    wallet: "0x91bd…c204",
+    status: "Active",
+    connection: "Agent API",
+    monthlySpend: 1265,
+    monthlyLimit: 3000,
+    lastActivity: "14 min ago",
+    pendingIntents: 0,
+    confirmed30d: 88,
+    failed30d: 3,
+  },
+  {
+    id: "a3",
+    agentId: "agt_juno_77ae",
+    name: "Juno",
+    persona: "Customer refunds & micropay",
+    wallet: "0x77ae…4490",
+    status: "Paused",
+    connection: "Agent API",
+    monthlySpend: 412,
+    monthlyLimit: 1500,
+    lastActivity: "1 day ago",
+    pendingIntents: 0,
+    confirmed30d: 22,
+    failed30d: 0,
+  },
+  {
+    id: "a4",
+    agentId: "agt_nova_2c08",
+    name: "Nova",
+    persona: "Treasury rebalancing",
+    wallet: "0x2c08…18df",
+    status: "Connecting",
+    connection: "Sandbox",
+    monthlySpend: 0,
+    monthlyLimit: 25000,
+    lastActivity: "—",
+    pendingIntents: 1,
+    confirmed30d: 0,
+    failed30d: 0,
+  },
+];
+
+export const agentSpends: AgentSpend[] = [
+  // Orion
+  { id: "s1", agentId: "a1", taskId: "tsk_8821", tool: "Stripe API", reason: "Renew team seats · annual", recipient: "Stripe Inc", amount: 2400, token: "USDC", status: "Confirmed", txHash: "0x4f2a…9a12", timestamp: "Today · 14:02", category: "Subscription", note: "Pre-approved renewal · contract OK" },
+  { id: "s2", agentId: "a1", taskId: "tsk_8822", tool: "AWS Billing", reason: "Top up compute credits", recipient: "AWS · 942-acct", amount: 1500, token: "USDC", status: "Confirmed", txHash: "0x91bd…c204", timestamp: "Today · 11:48", category: "Compute", note: "Monthly cap not breached" },
+  { id: "s3", agentId: "a1", taskId: "tsk_8830", tool: "Figma API", reason: "Add 4 editor seats", recipient: "Figma", amount: 240, token: "USDC", status: "Pending", txHash: "—", timestamp: "Today · 09:11", category: "Subscription", note: "Awaiting human cosign · $240 < cap" },
+  { id: "s4", agentId: "a1", taskId: "tsk_8819", tool: "Vendor Direct", reason: "Aether Studio · Q4 retainer", recipient: "Aether Studio", amount: 680, token: "USDC", status: "Awaiting Sign", txHash: "—", timestamp: "Yesterday · 18:30", category: "Vendor Payment", note: "Above $500 → needs sign" },
+  { id: "s5", agentId: "a1", taskId: "tsk_8801", tool: "Twilio API", reason: "Refill SMS balance", recipient: "Twilio", amount: 200, token: "USDC", status: "Failed", txHash: "0xa9f0…02bc", timestamp: "Oct 12 · 06:20", category: "API Usage", note: "Insufficient gas · retried by Orion" },
+  // Atlas
+  { id: "s6", agentId: "a2", taskId: "tsk_5512", tool: "OpenAI API", reason: "GPT batch transcription", recipient: "OpenAI", amount: 84, token: "USDC", status: "Confirmed", txHash: "0xd341…9f02", timestamp: "Today · 13:18", category: "API Usage", note: "Daily research run" },
+  { id: "s7", agentId: "a2", taskId: "tsk_5513", tool: "Perplexity", reason: "Pro search · market report", recipient: "Perplexity", amount: 20, token: "USDC", status: "Confirmed", txHash: "0x14de…88a0", timestamp: "Today · 12:55", category: "Data", note: "Per-task budget $25" },
+  { id: "s8", agentId: "a2", taskId: "tsk_5510", tool: "Dune API", reason: "Onchain dataset · 12mo", recipient: "Dune", amount: 320, token: "USDC", status: "Confirmed", txHash: "0x77ae…4490", timestamp: "Yesterday · 21:04", category: "Data", note: "—" },
+  { id: "s9", agentId: "a2", taskId: "tsk_5499", tool: "Replicate", reason: "Image gen · 1.2k calls", recipient: "Replicate", amount: 41, token: "USDC", status: "Failed", txHash: "—", timestamp: "Oct 13 · 02:11", category: "Compute", note: "Recipient changed · auto-blocked" },
+  // Juno
+  { id: "s10", agentId: "a3", taskId: "tsk_3301", tool: "Refund Bot", reason: "Order #A-9921 refund", recipient: "0x9a12…77f0", amount: 38, token: "USDC", status: "Confirmed", txHash: "0x5b71…e1c4", timestamp: "Oct 11 · 16:40", category: "Refund", note: "Auto-issued · proof attached" },
+  { id: "s11", agentId: "a3", taskId: "tsk_3299", tool: "Refund Bot", reason: "Order #A-9914 refund", recipient: "0x88c2…77a1", amount: 64, token: "USDC", status: "Confirmed", txHash: "0x88c2…77a1", timestamp: "Oct 10 · 09:02", category: "Refund", note: "—" },
+  // Nova
+  { id: "s12", agentId: "a4", taskId: "tsk_0001", tool: "Across", reason: "Test bridge · 50 USDC", recipient: "Across Protocol", amount: 50, token: "USDC", status: "Pending", txHash: "—", timestamp: "Today · 15:21", category: "Bridge", note: "Sandbox · no real funds" },
+];
+
+export const agentMonthly = [
+  { m: "May", spend: 1800 },
+  { m: "Jun", spend: 2200 },
+  { m: "Jul", spend: 3100 },
+  { m: "Aug", spend: 3900 },
+  { m: "Sep", spend: 5600 },
+  { m: "Oct", spend: 6497 },
+];
