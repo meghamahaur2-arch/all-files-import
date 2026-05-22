@@ -7,24 +7,28 @@
  *     static/                 ← all of dist/client/* (favicons, og, icons, /paymemo-extension.zip)
  *     functions/_render.func/
  *       .vc-config.json       (nodejs22.x runtime, Web-standard fetch handler)
- *       index.mjs             (entry — re-exports server.js as Vercel handler)
- *       server.js             (TanStack Start SSR bundle)
- *       assets/...            (chunked SSR code)
+ *       package.json          ({ "type": "module" })
+ *       index.mjs             (single-file SSR bundle — all node_modules inlined by esbuild)
+ *
+ * The Cloudflare Vite plugin (which we disabled for the Vercel target) used to do
+ * its own bundling/inlining. Without it the SSR entry pulls in raw imports from
+ * node_modules, which a Vercel function dir does not ship by default — so we
+ * bundle the whole graph into one self-contained ESM file with esbuild.
  *
  * Run from package.json via:
  *     "buildCommand": "npm run build && node scripts/vercel-build.mjs"
- *
- * Vercel auto-detects `.vercel/output/` and skips its own framework detection.
  */
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { build as esbuild } from "esbuild";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const distClient = path.join(root, "dist/client");
 const distServer = path.join(root, "dist/server");
+const distServerEntry = path.join(distServer, "server.js");
 const out = path.join(root, ".vercel/output");
 const outStatic = path.join(out, "static");
 const outFunc = path.join(out, "functions/_render.func");
@@ -56,9 +60,9 @@ async function exists(target) {
 }
 
 async function main() {
-  if (!(await exists(distClient)) || !(await exists(distServer))) {
+  if (!(await exists(distClient)) || !(await exists(distServerEntry))) {
     throw new Error(
-      "Missing dist/client or dist/server — run `npm run build` first.",
+      "Missing dist/client or dist/server/server.js — run `npm run build` first.",
     );
   }
 
@@ -98,9 +102,47 @@ async function main() {
   // 2. Copy the static build.
   await copyDir(distClient, outStatic);
 
-  // 3. Build the SSR function.
+  // 3. Build the SSR function — esbuild bundles everything into a single ESM file.
   await fs.mkdir(outFunc, { recursive: true });
-  await copyDir(distServer, outFunc);
+
+  // Write an entry that adapts TanStack Start's Web fetch handler to Vercel's
+  // Node 22 expected signature: `export default (req: Request) => Promise<Response>`.
+  const adapterEntry = path.join(distServer, "_vercel-entry.mjs");
+  await fs.writeFile(
+    adapterEntry,
+    `import server from "./server.js";\nexport default async function handler(request) {\n  return server.fetch(request);\n}\n`,
+  );
+
+  try {
+    await esbuild({
+      entryPoints: [adapterEntry],
+      outfile: path.join(outFunc, "index.mjs"),
+      bundle: true,
+      platform: "node",
+      target: "node22",
+      format: "esm",
+      // Tell esbuild to leave Node built-ins alone and to inline every npm dep.
+      packages: "bundle",
+      external: [],
+      // The SSR bundle imports `./assets/server-*.js` with a static literal path,
+      // so esbuild can resolve and inline it. Banner makes top-level await safe.
+      banner: {
+        js: "import { createRequire as __pmCreateRequire } from 'node:module'; const require = __pmCreateRequire(import.meta.url);",
+      },
+      logLevel: "info",
+      legalComments: "none",
+      sourcemap: false,
+      minify: false,
+    });
+  } finally {
+    await rmrf(adapterEntry);
+  }
+
+  // Vercel needs to know the function is ESM.
+  await fs.writeFile(
+    path.join(outFunc, "package.json"),
+    JSON.stringify({ type: "module" }, null, 2),
+  );
 
   await fs.writeFile(
     path.join(outFunc, ".vc-config.json"),
@@ -117,16 +159,6 @@ async function main() {
     ),
   );
 
-  const entry = `// Vercel Node22 supports Web-standard fetch handlers when the function
-// default-exports a (Request) => Promise<Response> in an ESM module.
-import server from "./server.js";
-
-export default async function handler(request) {
-  return server.fetch(request);
-}
-`;
-  await fs.writeFile(path.join(outFunc, "index.mjs"), entry);
-
   console.log("✓ Vercel Build Output API written to", path.relative(root, out));
 }
 
@@ -134,3 +166,4 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+
