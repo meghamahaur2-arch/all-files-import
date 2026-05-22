@@ -287,11 +287,36 @@ function ReviewQueue() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(confirmedPayload),
-    }).catch(() => null);
+    }).catch((networkError) => {
+      console.warn("[paymemo] /api/extension-intent fetch failed", networkError);
+      return null;
+    });
 
     if (!response?.ok) {
-      setActionMessage("Could not save this review decision. Check the API connection.");
-      notify.error("Could not save review", "Check the API connection and try again.");
+      let detail = "";
+      try {
+        const text = await response?.text();
+        if (text) {
+          try {
+            const json = JSON.parse(text);
+            detail =
+              json?.error ||
+              (json?.issues
+                ? `Validation: ${JSON.stringify(json.issues)}`
+                : "") ||
+              text.slice(0, 200);
+          } catch {
+            detail = text.slice(0, 200);
+          }
+        }
+      } catch {
+        // ignore
+      }
+      const status = response ? `HTTP ${response.status}` : "no response (network/CORS)";
+      const reason = `${status}${detail ? ` — ${detail}` : ""}`;
+      console.error("[paymemo] save review failed:", reason, "payload was:", confirmedPayload);
+      setActionMessage(`Could not save this review. ${reason}`);
+      notify.error("Could not save review", reason);
       return;
     }
 
