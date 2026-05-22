@@ -35,27 +35,24 @@ function ReviewQueue() {
   const [ownerWallet, setOwnerWallet] = useState<string>("");
   const [partnerWallets, setPartnerWallets] = useState<PartnerWallet[]>([]);
   const [completedRecords, setCompletedRecords] = useState<ReviewItem[]>([]);
-  // All tx hashes that exist in the user's vault, regardless of status. We
-  // capture in-flight rows (`pending_signature`, `pending_chain`) too so a
-  // chain-watch row never sneaks into Pending while a /app/send broadcast
-  // is mid-flight. Confirmed hashes are still tracked here AND in
-  // `completedRecords`; they're the same set, just split because completed
-  // items also need their decrypted memo for rendering.
-  const [vaultClaimedTxHashes, setVaultClaimedTxHashes] = useState<Set<string>>(
-    () => new Set<string>(),
-  );
   const [completedStatus, setCompletedStatus] = useState<
     "idle" | "loading" | "loaded" | "locked" | "error"
   >("idle");
 
-  // Set of tx hashes that already have a counterpart somewhere - either in
-  // vault_records (dApp /app/send, ANY status, including in-flight ones)
-  // or in extension_records itself marked confirmed (extension popup/
-  // sidepanel save). The Pending list filters against this set so a tx
-  // the user is already handling (or has already explained) never shows
-  // up demanding a second review.
+  // Set of tx hashes that already have a CONFIRMED counterpart somewhere -
+  // either in vault_records (dApp /app/send or "Record review" confirm)
+  // or in extension_records marked confirmed (extension popup save). The
+  // Pending list filters against this set so a tx the user has already
+  // explained never shows up demanding a second review.
+  //
+  // Important: we only treat *confirmed* rows as suppressing twins. We do
+  // NOT add non-confirmed vault rows (e.g. mirrored `needs-review`
+  // entries from `paymemo-mirror.ts`) here, because a needs-review vault
+  // mirror is by definition the same payment the user still needs to
+  // review in the extension side, and suppressing it would empty the
+  // Pending tab.
   const completedTxHashes = useMemo(() => {
-    const set = new Set<string>(vaultClaimedTxHashes);
+    const set = new Set<string>();
     for (const r of completedRecords) {
       const hash = (r.hash || "").toLowerCase();
       if (hash && hash !== "pending") set.add(hash);
@@ -66,7 +63,7 @@ function ReviewQueue() {
       }
     }
     return set;
-  }, [completedRecords, extensionQuery.data, vaultClaimedTxHashes]);
+  }, [completedRecords, extensionQuery.data]);
 
   // Pending = records that landed via chain-watch (server-side Morph
   // scanner OR the extension's background chain scan) and still need a
@@ -123,7 +120,6 @@ function ReviewQueue() {
     const session = readVaultSession();
     if (!session?.walletAddress) {
       setCompletedRecords([]);
-      setVaultClaimedTxHashes(new Set());
       setCompletedStatus("locked");
       return;
     }
@@ -135,11 +131,18 @@ function ReviewQueue() {
         () => [],
       );
 
-      // Backfill any confirmed extension_record into the vault, same as
-      // /app/ledger does. The extension popup save can't write to
-      // vault_records directly (no vault key), so without this mirror
-      // those memos would never appear in the Ledger view. Idempotent -
-      // anything already in vault by txHash is skipped.
+      // Backfill EVERY mirrorable extension_record into the vault.
+      //
+      // The extension popup / sidepanel writes memos to extension_records
+      // only; it has no access to the vault encryption key. The server-
+      // side Morph scanner and the extension's background chain-watch
+      // also write to extension_records (with status="needs-review").
+      // Without this mirror none of those rows ever reach /app/ledger,
+      // which reads exclusively from vault_records.
+      //
+      // The mirror covers `confirmed`, `needs-review`, and `failed`
+      // statuses, preserves the source status, and is idempotent (an
+      // existing vault tx hash is skipped). See `paymemo-mirror.ts`.
       if (key && extensionQuery.data && extensionQuery.data.length > 0) {
         const existingVaultTxHashes = new Set<string>();
         for (const record of records) {
@@ -158,17 +161,6 @@ function ReviewQueue() {
           );
         }
       }
-
-      // Build the dedupe set from EVERY vault row regardless of status so
-      // an in-flight /app/send broadcast (pending_signature / pending_chain)
-      // also suppresses any duplicate `needs-review` row a chain-watcher
-      // might have created in the meantime.
-      const claimedHashes = new Set<string>();
-      for (const record of records) {
-        const tx = (record.publicRecord as { txHash?: string } | null)?.txHash;
-        if (tx) claimedHashes.add(tx.toLowerCase());
-      }
-      setVaultClaimedTxHashes(claimedHashes);
 
       const onlyConfirmed = records.filter((record) => record.publicRecord.status === "confirmed");
 
@@ -195,7 +187,6 @@ function ReviewQueue() {
     } catch (error) {
       console.warn("[paymemo] completed load failed", error);
       setCompletedRecords([]);
-      setVaultClaimedTxHashes(new Set());
       setCompletedStatus("error");
     }
   }

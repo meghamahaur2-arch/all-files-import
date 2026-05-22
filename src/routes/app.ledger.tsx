@@ -403,8 +403,24 @@ function Ledger() {
       session.walletAddress,
     );
 
+    // Editing a needs-review row on the Ledger is, by definition, the
+    // user filling in the memo - i.e. completing the review. Promote
+    // status to "confirmed" so the row leaves the Review/Pending tab
+    // automatically. The server's `upsertVaultRecord` notices the
+    // confirmed status and also deletes the matching extension_records
+    // entry (see paymemo-db.ts:276-281), keeping the two tables in sync.
+    // Any other status (confirmed, failed) stays as-is.
+    const promotedStatus =
+      target.raw.publicRecord.status === "needs-review"
+        ? "confirmed"
+        : target.raw.publicRecord.status;
+
     const updated: StoredVaultRecord = {
       ...target.raw,
+      publicRecord: {
+        ...target.raw.publicRecord,
+        status: promotedStatus,
+      },
       encryptedMetadata,
       syncStatus: "synced",
       updatedAt: new Date().toISOString(),
