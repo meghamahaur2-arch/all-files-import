@@ -1,4 +1,4 @@
-import { getSelectedEthereumProvider } from "./morph";
+﻿import { getSelectedEthereumProvider } from "./morph";
 import { connectWallet } from "./morph";
 
 export const PAYMEMO_UNLOCK_MESSAGE =
@@ -59,7 +59,7 @@ export async function signVaultUnlock(walletAddress: string) {
 /**
  * Ask the user to sign an explicit "authorize watching" message before we
  * register a wallet in their PayMemo watch list. This is a friction-on-purpose
- * step — it makes accidental adds impossible (the user has to see a wallet
+ * step - it makes accidental adds impossible (the user has to see a wallet
  * popup and confirm) and lets us record a verifiable consent for the
  * partner wallet address.
  */

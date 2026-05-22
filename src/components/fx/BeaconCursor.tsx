@@ -1,10 +1,10 @@
-import { motion, useMotionValue, useSpring } from "framer-motion";
+﻿import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 /**
  * BeaconCursor
  * - A precise crosshair dot follows the pointer with ZERO lag (so clicks land
- *   exactly where the user sees the cursor — fixes the "clicking somewhere else"
+ *   exactly where the user sees the cursor - fixes the "clicking somewhere else"
  *   bug from the previous spring-only cursor).
  * - A soft aurora ring trails with spring physics for delight.
  * - On [data-cursor], `a`, and `button` elements: ring expands and magnetically
@@ -142,7 +142,7 @@ export function BeaconCursor() {
         />
       </motion.div>
 
-      {/* Precise dot at EXACT pointer position — clicks land here */}
+      {/* Precise dot at EXACT pointer position - clicks land here */}
       <motion.div
         className="absolute -translate-x-1/2 -translate-y-1/2"
         style={{ left: rawX, top: rawY }}

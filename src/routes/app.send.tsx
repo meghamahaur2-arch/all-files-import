@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Topbar } from "@/components/app/Topbar";
 import { WalletConnectModal } from "@/components/app/WalletConnectModal";
 import {
@@ -101,7 +101,7 @@ function newRecipient(): Recipient {
 type FlowStep = "idle" | "intent" | "signature" | "chain" | "confirmed" | "failed";
 
 function Send() {
-  // Batch mode lives at /app/batch — this page is single-send only. We keep
+  // Batch mode lives at /app/batch - this page is single-send only. We keep
   // the variable so the existing `mode === "batch"` branches stay tree-shake
   // friendly without TS narrowing them to dead-code comparisons.
   const mode = "single" as "single" | "batch";

@@ -1,8 +1,8 @@
-// PayMemo side panel — two distinct surfaces:
+﻿// PayMemo side panel - two distinct surfaces:
 //
 //   1. Default mode (Chrome side panel): WALLET MANAGER ONLY.
 //      Paste a Morph address, label it, start watching. Nothing else.
-//      No list of detected transactions, no review surface — all of that
+//      No list of detected transactions, no review surface - all of that
 //      lives at /app/review on the dApp.
 //
 //   2. popupMode=1 (windowed prompt opened by background.js when a tx is
@@ -30,7 +30,7 @@ const focusedRecordId = urlParams.get("record") || "";
 const popupMode = urlParams.get("popup") === "1";
 
 if (popupMode) {
-  panelStatus = "Tag this transaction — saved memos go to your dashboard's Completed tab.";
+  panelStatus = "Tag this transaction - saved memos go to your dashboard's Completed tab.";
 }
 
 function escapeHtml(value) {
@@ -238,7 +238,7 @@ function renderWalletManager(root) {
         <div>
           <span class="eyebrow">PayMemo Watcher</span>
           <h1>Watched wallets</h1>
-          <p class="subtitle">Add the Morph wallets PayMemo should listen to. When a transaction lands, this extension pops up a memo prompt — saved memos go to your dashboard's Completed tab.</p>
+          <p class="subtitle">Add the Morph wallets PayMemo should listen to. When a transaction lands, this extension pops up a memo prompt - saved memos go to your dashboard's Completed tab.</p>
         </div>
       </header>
       <div class="scroll">
@@ -397,7 +397,7 @@ chrome.runtime.onMessage.addListener((message) => {
     message?.type === "PAYMEMO_RECORDS_UPDATED" ||
     message?.type === "PAYMEMO_CHAIN_WATCH_FOUND"
   ) {
-    // In popupMode the user is mid-memo — never refresh. In wallet manager
+    // In popupMode the user is mid-memo - never refresh. In wallet manager
     // mode we only refresh when they aren't typing into the form.
     if (popupMode) return;
     if (isUserEditing()) return;

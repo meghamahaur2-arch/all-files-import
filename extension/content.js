@@ -1,4 +1,4 @@
-const ignoredPayMemo =
+﻿const ignoredPayMemo =
   (location.hostname === "127.0.0.1" || location.hostname === "localhost") &&
   location.port === "5174";
 
@@ -637,7 +637,7 @@ window.addEventListener("message", async (event) => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "PAYMEMO_SHOW_CAPTURE_FOR_RECORD" || !message.record) return false;
 
-  // Never show the capture overlay on PayMemo's own domain — the dApp has its
+  // Never show the capture overlay on PayMemo's own domain - the dApp has its
   // own /app/review UI and renders its own memo prompts. The overlay is for
   // 3rd-party dApps only.
   if (isAllowedPayMemoOrigin()) {

@@ -1,4 +1,4 @@
-import { isAddress } from "./morph";
+﻿import { isAddress } from "./morph";
 import { getVaultAuthHeaders } from "./crypto-vault";
 
 const LEGACY_PARTNER_KEY = "paymemo:partner-wallets:v1";
@@ -120,7 +120,7 @@ export function clearWalletDataFromExtension(walletAddress: string) {
 }
 
 /**
- * Server-side mirror — registers a watched wallet so the Vercel cron and
+ * Server-side mirror - registers a watched wallet so the Vercel cron and
  * the on-load catch-up scan know to sweep it even while the user's tab
  * is closed. Failure is non-fatal (client-side watch still works).
  */

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { Topbar } from "@/components/app/Topbar";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { WalletConnectModal } from "@/components/app/WalletConnectModal";
@@ -187,7 +187,7 @@ function Dashboard() {
     } catch (error) {
       const text = error instanceof Error ? error.message : "Signature was cancelled.";
       setMessage(`Add cancelled: ${text}`);
-      notify.info("Add cancelled", "Signature was rejected — no wallet added.");
+      notify.info("Add cancelled", "Signature was rejected - no wallet added.");
       return;
     }
 
@@ -340,7 +340,7 @@ function Dashboard() {
                 <RadioTower className="h-4 w-4 text-mint" /> Wallets to watch
               </div>
               <p className="mt-1 text-xs text-ink/75">
-                Add the wallets PayMemo should listen to on Morph Hoodi —
+                Add the wallets PayMemo should listen to on Morph Hoodi -
                 <strong> start with your own</strong>, then add teammate, vendor, or partner
                 wallets. Detections appear in{" "}
                 <Link to="/app/review" className="underline underline-offset-2 hover:text-ink">

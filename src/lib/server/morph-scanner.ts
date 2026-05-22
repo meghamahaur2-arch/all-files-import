@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server-side Morph Hoodi scanner. Writes detected transactions directly
  * to `extension_records` (the same table the dApp's review queue reads)
  * via `paymemo-db`.
@@ -10,7 +10,7 @@
  *   - The Railway worker (`worker/index.js`), which calls the GET endpoint
  *     on every new Morph block for ~2-second push detection
  *
- * The dApp no longer runs an in-tab poller — all scanning is server-side.
+ * The dApp no longer runs an in-tab poller - all scanning is server-side.
  */
 
 import {
@@ -264,7 +264,7 @@ async function scanOne(
       if (!tx.hash) continue;
       const hashLower = tx.hash.toLowerCase();
       // Skip transactions the user has already memo'd via /app/send or via
-      // the Review-confirm flow — they live in vault_records or are already
+      // the Review-confirm flow - they live in vault_records or are already
       // recorded in extension_records, so re-inserting would create
       // duplicates and bounce them back into Needs Review.
       if (knownTxHashes.has(hashLower)) continue;

@@ -1,4 +1,4 @@
-const recordsRoot = document.querySelector("#records");
+﻿const recordsRoot = document.querySelector("#records");
 const enabledInput = document.querySelector("#enabled");
 const enabledText = document.querySelector("#enabledText");
 const appUrlInput = document.querySelector("#appUrl");
@@ -48,7 +48,7 @@ function parseWatchedWalletLines(value) {
       const address = match[0].toLowerCase();
       const label = line
         .replace(match[0], "")
-        .replace(/[|,\-–—:]+/g, " ")
+        .replace(/[|,\---:]+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
       if (!addresses.includes(address)) addresses.push(address);
@@ -215,7 +215,7 @@ function configureLivePopupScan() {
 
   if (!currentSettings.chainWatchEnabled) return;
 
-  // Slower interval (was 3.5s — too aggressive, made the popup feel like it
+  // Slower interval (was 3.5s - too aggressive, made the popup feel like it
   // was refreshing constantly and clobbered the textarea while typing).
   // The Vercel cron + Railway worker do the real-time work; this is just
   // a "stats fresh" tick.

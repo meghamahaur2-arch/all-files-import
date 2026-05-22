@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Chrome,
@@ -16,7 +16,7 @@ import { Logo } from "@/components/brand/Logo";
 export const Route = createFileRoute("/install")({
   head: () => ({
     meta: [
-      { title: "Install PayMemo — Wallet Assist browser extension" },
+      { title: "Install PayMemo - Wallet Assist browser extension" },
       {
         name: "description",
         content:
@@ -58,7 +58,7 @@ function InstallPage() {
           <p className="mt-6 max-w-3xl text-base sm:text-lg text-ink/82 leading-relaxed">
             The PayMemo browser extension watches your wallets on Morph and pops up a private memo
             prompt the moment a transaction is detected. The extension is not yet on the Chrome Web
-            Store — for the demo you can side-load it in less than 30 seconds.
+            Store - for the demo you can side-load it in less than 30 seconds.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -72,7 +72,7 @@ function InstallPage() {
             <a
               href="chrome://extensions"
               onClick={(event) => {
-                // chrome://extensions cannot be opened from a normal link — guide the user instead.
+                // chrome://extensions cannot be opened from a normal link - guide the user instead.
                 event.preventDefault();
                 navigator.clipboard?.writeText("chrome://extensions").catch(() => undefined);
               }}
@@ -89,7 +89,7 @@ function InstallPage() {
           </div>
 
           <p className="mt-3 text-xs text-ink/75 max-w-2xl">
-            Don't want to install anything? The dashboard mirrors every extension feature — add a
+            Don't want to install anything? The dashboard mirrors every extension feature - add a
             watched wallet, label partners, and review detected transactions in your browser without
             any sideload.
           </p>
@@ -120,7 +120,7 @@ function InstallPage() {
                 <code className="rounded bg-ink/10 px-1.5 py-0.5 text-[12px]">
                   paymemo-extension
                 </code>{" "}
-                folder — Chrome reads files directly from it.
+                folder - Chrome reads files directly from it.
               </>
             }
           />
@@ -160,7 +160,7 @@ function InstallPage() {
                 <code className="rounded bg-ink/10 px-1.5 py-0.5 text-[12px]">
                   paymemo-extension
                 </code>{" "}
-                folder. PayMemo will appear in your extensions list with its icon — pin it to your
+                folder. PayMemo will appear in your extensions list with its icon - pin it to your
                 toolbar so it's always one click away.
               </>
             }
@@ -195,7 +195,7 @@ function InstallPage() {
                 Chrome Web Store listing is on the way.
               </h2>
               <p className="mt-3 text-cream/88 leading-relaxed">
-                PayMemo is an open hackathon build. The Web Store $5 developer fee isn't a barrier —
+                PayMemo is an open hackathon build. The Web Store $5 developer fee isn't a barrier -
                 listing review and our v1 polish are. Until then, sideloading is the official
                 install path, and the extension code is yours to inspect.
               </p>

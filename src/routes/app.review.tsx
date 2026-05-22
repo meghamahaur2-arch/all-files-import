@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Topbar } from "@/components/app/Topbar";
 import { Check, ChevronDown, FileSearch, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -41,7 +41,7 @@ function ReviewQueue() {
     [extensionQuery.data],
   );
   // Extension memos the user has already filled in. These come through
-  // `/api/extension-intent` with status="confirmed" — they're the records
+  // `/api/extension-intent` with status="confirmed" - they're the records
   // saved from the extension popup/sidepanel after the user tagged them.
   // We surface them on the Completed tab alongside vault records so the
   // extension flow doesn't get stuck in "Pending" purgatory.
@@ -353,7 +353,7 @@ function ReviewQueue() {
         // ignore
       }
       const status = response ? `HTTP ${response.status}` : "no response (network/CORS)";
-      const reason = `${status}${detail ? ` — ${detail}` : ""}`;
+      const reason = `${status}${detail ? ` - ${detail}` : ""}`;
       console.error("[paymemo] save review failed:", reason, "payload was:", confirmedPayload);
       setActionMessage(`Could not save this review. ${reason}`);
       notify.error("Could not save review", reason);
@@ -416,13 +416,13 @@ function ReviewQueue() {
       ledgerSynced === "synced"
         ? "Recorded. Saved to your encrypted Ledger as confirmed."
         : ledgerSynced === "local-only"
-          ? "Recorded locally. Sync to your Ledger failed — try again from /app/ledger."
+          ? "Recorded locally. Sync to your Ledger failed - try again from /app/ledger."
           : "Recorded. Unlock your vault on the dashboard to also save this to the Ledger.",
     );
     notify.success(
       "Review recorded",
       ledgerSynced === "synced"
-        ? "Confirmed — view it in your Ledger."
+        ? "Confirmed - view it in your Ledger."
         : "Confirmed in the review queue.",
     );
   }
@@ -443,7 +443,7 @@ function ReviewQueue() {
               <div className="text-xs text-ink/72">
                 {activeTab === "pending"
                   ? "Click a transaction, add context, then record it."
-                  : "Edit the memo on any past transaction — they're already in your encrypted Ledger."}
+                  : "Edit the memo on any past transaction - they're already in your encrypted Ledger."}
               </div>
             </div>
             <button
@@ -576,7 +576,7 @@ function ReviewQueue() {
               <a href="/app" className="font-semibold text-ink underline underline-offset-2">
                 dashboard
               </a>{" "}
-              and add a wallet — PayMemo's server scanner will catch anything that
+              and add a wallet - PayMemo's server scanner will catch anything that
               lands on Morph Hoodi and surface it here.
             </div>
           )}
@@ -723,7 +723,7 @@ function toReviewItem(record: SyncedRecord, index: number): ReviewItem {
 /**
  * Adapt a (possibly decrypted) `StoredVaultRecord` into the same
  * `ReviewItem` shape the list expects. When `metadata` is empty the
- * record stays "locked" — fields render as encrypted but the row still
+ * record stays "locked" - fields render as encrypted but the row still
  * shows in the Completed tab so the user knows it exists.
  */
 function vaultRecordToReviewItem(

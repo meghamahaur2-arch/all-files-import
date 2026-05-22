@@ -1,4 +1,4 @@
-const STORAGE_KEY = "paymemo.records";
+﻿const STORAGE_KEY = "paymemo.records";
 const SETTINGS_KEY = "paymemo.settings";
 const WATCH_STATE_KEY = "paymemo.morphWatchState";
 const INSTALL_TOKEN_KEY = "paymemo.installToken";
@@ -25,7 +25,7 @@ const DEFAULT_SETTINGS = {
   partnerWalletAddresses: [],
   autoOpenChainWatchPrompt: true,
   // If false (default), the chain-watch popup only fires for transactions
-  // involving the user's own wallet — not for partner wallets. Partner-wallet
+  // involving the user's own wallet - not for partner wallets. Partner-wallet
   // detections are still recorded silently for review.
   popupForPartnerWallets: false,
   morphWatchIntervalMs: 2500,
@@ -136,7 +136,7 @@ async function registerHandledTxHash(txHash, origin) {
   set.add(hash);
   const trimmed = Array.from(set).slice(-HANDLED_TX_LIMIT);
   await chrome.storage.local.set({ [HANDLED_TX_HASHES_KEY]: trimmed });
-  // Also drop any extension record that was already created for this tx —
+  // Also drop any extension record that was already created for this tx -
   // the dApp owns it now, so it shouldn't sit in the review queue.
   const records = await readRecords();
   const filtered = records.filter(
@@ -385,16 +385,44 @@ async function syncRecord(record) {
   };
 
   const installToken = await getOrCreateInstallToken();
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-paymemo-install-token": installToken,
-    },
-    body: JSON.stringify(payload),
-  });
+  let response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-paymemo-install-token": installToken,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    // Network-level failure: CORS preflight rejected, DNS failure, offline,
+    // Vercel not reachable, etc. Surface the actual cause so the popup can
+    // show "Failed to fetch: TypeError: ..." instead of a generic message.
+    throw new Error(
+      `Network error talking to ${endpoint}: ${error?.message ?? String(error)}`,
+    );
+  }
 
-  if (!response.ok) throw new Error("PayMemo dApp sync failed.");
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const text = await response.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text);
+          detail = json?.error || text.slice(0, 200);
+        } catch {
+          detail = text.slice(0, 200);
+        }
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(
+      `PayMemo sync failed: HTTP ${response.status}${detail ? ` - ${detail}` : ""}`,
+    );
+  }
   const result = await response.json();
   await patchRecord(record.id, { syncStatus: "synced", syncedAt: new Date().toISOString() });
   return result;

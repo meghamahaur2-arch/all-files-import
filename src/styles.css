@@ -1,4 +1,4 @@
-@import "tailwindcss" source(none);
+﻿@import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
 
@@ -252,7 +252,7 @@
     color: transparent;
   }
 
-  /* Bulb flicker — blink 3 times, accelerating to a fast final flick. */
+  /* Bulb flicker - blink 3 times, accelerating to a fast final flick. */
   @keyframes bulb-flicker {
     /* Blink 1 (slow) */
     0%   { color: #ffffff; text-shadow: 0 0 18px rgba(255,255,255,0.55); }

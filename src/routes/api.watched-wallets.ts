@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import {
   deleteWatchedWallet,
@@ -17,9 +17,9 @@ const upsertSchema = z.object({
   /**
    * Optional signed authorization. The client signs a structured message
    * with the owner's wallet before registering a wallet to watch. We store
-   * just the signature + message text alongside the row — useful for later
+   * just the signature + message text alongside the row - useful for later
    * audit and for proving consent. We don't currently re-verify the signature
-   * server-side (would need viem's verifyMessage) — that's a future hardening.
+   * server-side (would need viem's verifyMessage) - that's a future hardening.
    */
   authSignature: z.string().optional(),
   authMessage: z.string().optional(),
@@ -35,7 +35,7 @@ const deleteSchema = z.object({
  *
  * The server-side mirror of the client's "wallets to watch" list. Lets the
  * Vercel cron and any on-page-load catch-up scan know which Morph addresses
- * to sweep — so transactions detected while the user is offline still land
+ * to sweep - so transactions detected while the user is offline still land
  * in their Needs Review queue when they return.
  */
 export const Route = createFileRoute("/api/watched-wallets")({

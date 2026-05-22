@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PayMemo Morph Hoodi real-time block trigger.
  *
  * Watches Morph for new blocks and, on every new block, fires the PayMemo
@@ -6,14 +6,14 @@
  * waiting for the Vercel cron (which is daily-ish on Hobby).
  *
  * Modes:
- *   1. WebSocket (`MORPH_WS_URL`) — subscribes to `newHeads`. Fastest, but
+ *   1. WebSocket (`MORPH_WS_URL`) - subscribes to `newHeads`. Fastest, but
  *      depends on Morph exposing a WS endpoint. Auto-falls-back to HTTP
  *      polling if the socket can't connect / drops.
- *   2. HTTP polling (`MORPH_RPC_URL`) — calls `eth_blockNumber` every
+ *   2. HTTP polling (`MORPH_RPC_URL`) - calls `eth_blockNumber` every
  *      `POLL_INTERVAL_MS` (default 2s). Catches every block since Morph
  *      Hoodi block time is ~2s.
  *
- * The worker itself does NOT call Morph's heavier scan RPCs — it just
+ * The worker itself does NOT call Morph's heavier scan RPCs - it just
  * triggers Vercel, which holds all the real logic. Splitting the work this
  * way keeps the worker stateless, easy to redeploy, and immune to schema
  * drift in PayMemo.
@@ -27,8 +27,8 @@
  *                      (falls back to HTTP polling if missing or broken)
  *   MORPH_RPC_URL      default: https://rpc-hoodi.morph.network
  *   POLL_INTERVAL_MS   default: 2000
- *   SCAN_DEBOUNCE_MS   default: 1500 — minimum gap between scan triggers
- *   SCAN_BURST_LIMIT   default: 8 — max consecutive scans per minute
+ *   SCAN_DEBOUNCE_MS   default: 1500 - minimum gap between scan triggers
+ *   SCAN_BURST_LIMIT   default: 8 - max consecutive scans per minute
  */
 
 import { WebSocket } from "ws";
@@ -42,7 +42,7 @@ const SCAN_DEBOUNCE_MS = parseInt(process.env.SCAN_DEBOUNCE_MS || "1500", 10);
 const SCAN_BURST_LIMIT = parseInt(process.env.SCAN_BURST_LIMIT || "8", 10);
 
 if (!CRON_SECRET) {
-  console.warn("[paymemo-worker] CRON_SECRET is empty — scan calls will be unauthenticated and Vercel will likely reject them.");
+  console.warn("[paymemo-worker] CRON_SECRET is empty - scan calls will be unauthenticated and Vercel will likely reject them.");
 }
 
 let lastSeenBlock = 0;
@@ -80,7 +80,7 @@ async function triggerScan(blockNumber) {
     scansInLastMinute = 0;
   }
   if (scansInLastMinute >= SCAN_BURST_LIMIT) {
-    log(`burst limit hit (${SCAN_BURST_LIMIT}/min) — skipping scan trigger`);
+    log(`burst limit hit (${SCAN_BURST_LIMIT}/min) - skipping scan trigger`);
     return;
   }
 
@@ -96,7 +96,7 @@ async function triggerScan(blockNumber) {
     const body = await response.json().catch(() => ({}));
     const dt = Date.now() - t0;
     if (!response.ok) {
-      log(`scan trigger failed (block ${blockNumber}) — HTTP ${response.status} in ${dt}ms — ${JSON.stringify(body).slice(0, 200)}`);
+      log(`scan trigger failed (block ${blockNumber}) - HTTP ${response.status} in ${dt}ms - ${JSON.stringify(body).slice(0, 200)}`);
       return;
     }
     log(
@@ -145,7 +145,7 @@ const WS_BACKOFF_MAX = 60_000;
 
 function startWebSocket() {
   if (!MORPH_WS_URL) {
-    log("no MORPH_WS_URL set — using HTTP polling only");
+    log("no MORPH_WS_URL set - using HTTP polling only");
     startHttpPolling();
     return;
   }
@@ -158,7 +158,7 @@ function startWebSocket() {
   socket.on("open", () => {
     opened = true;
     wsBackoffMs = 1000;
-    log("WebSocket connected — subscribing to newHeads");
+    log("WebSocket connected - subscribing to newHeads");
     socket.send(
       JSON.stringify({
         jsonrpc: "2.0",
@@ -194,10 +194,10 @@ function startWebSocket() {
 
   socket.on("close", () => {
     if (wsClient === socket) wsClient = null;
-    log(`WebSocket closed — reconnecting in ${wsBackoffMs}ms (also resuming HTTP polling)`);
+    log(`WebSocket closed - reconnecting in ${wsBackoffMs}ms (also resuming HTTP polling)`);
     startHttpPolling();
     if (!opened) {
-      // Initial connect failed — disable WS for this run and rely on HTTP.
+      // Initial connect failed - disable WS for this run and rely on HTTP.
       log("WebSocket never opened; staying on HTTP polling only");
       return;
     }
@@ -216,14 +216,14 @@ log(`mode = ${MORPH_WS_URL ? "websocket (+ http safety poll)" : "http polling"}`
 
 startWebSocket();
 
-// Healthcheck — write the latest seen block to a file so Railway / Fly
+// Healthcheck - write the latest seen block to a file so Railway / Fly
 // health endpoints can read it if you wire one up.
 setInterval(() => {
   log(`heartbeat · lastSeenBlock=${lastSeenBlock} · scansInLastMinute=${scansInLastMinute}`);
 }, 60_000);
 
 process.on("SIGTERM", () => {
-  log("SIGTERM received — shutting down");
+  log("SIGTERM received - shutting down");
   stopHttpPolling();
   if (wsClient) wsClient.close();
   process.exit(0);

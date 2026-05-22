@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 
 /**
  * Lightweight diagnostic endpoint. Useful when something looks off in
@@ -8,7 +8,7 @@ import { createFileRoute } from "@tanstack/react-router";
  *   - PayMemo can actually round-trip a request to Supabase
  *   - Morph Hoodi RPC is reachable
  *
- * Read-only — does NOT touch user data. No auth (no PII surfaced).
+ * Read-only - does NOT touch user data. No auth (no PII surfaced).
  */
 export const Route = createFileRoute("/api/health")({
   server: {

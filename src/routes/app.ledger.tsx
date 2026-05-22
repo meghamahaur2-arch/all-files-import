@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Topbar } from "@/components/app/Topbar";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { EditRecordModal, type EditableRecord } from "@/components/app/EditRecordModal";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/app/ledger")({
 type LedgerRow = {
   id: string;
   date: string;
-  /** Epoch milliseconds — drives the date-range filter. */
+  /** Epoch milliseconds - drives the date-range filter. */
   dateMs: number;
   hash: string;
   amount: string;
@@ -71,7 +71,7 @@ const statuses = [
 // Each preset is a function from `now` → `{ from, to }` epoch range. `null`
 // means "no bound on that side". The financial-year presets use April→March
 // (Indian / UK / SG / Japan FY) since that's the most common globally; if
-// you want a different FY (Jul–Jun for AU/NZ, Oct–Sep for US federal) just
+// you want a different FY (Jul-Jun for AU/NZ, Oct-Sep for US federal) just
 // add another entry below.
 
 export type DateRangeKey =
@@ -175,8 +175,8 @@ const DATE_RANGE_OPTIONS: { value: DateRangeKey; label: string }[] = [
   { value: "12m", label: "Last 12 months" },
   { value: "ytd", label: "Year to date" },
   { value: "last-year", label: "Last calendar year" },
-  { value: "fy", label: "Financial year (Apr–Mar)" },
-  { value: "fy-prev", label: "Previous FY (Apr–Mar)" },
+  { value: "fy", label: "Financial year (Apr-Mar)" },
+  { value: "fy-prev", label: "Previous FY (Apr-Mar)" },
   { value: "custom", label: "Custom range…" },
 ];
 

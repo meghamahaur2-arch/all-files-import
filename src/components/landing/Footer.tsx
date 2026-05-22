@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+﻿import { Link } from "@tanstack/react-router";
 import { Logo } from "@/components/brand/Logo";
 
 export function Footer() {
@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex items-center gap-2">
           <Logo size={24} className="rounded-[8px]" />
           <span className="font-semibold text-ink">PayMemo</span>
-          <span className="ml-3">© 2026 — Encrypted memory for the onchain economy.</span>
+          <span className="ml-3">© 2026 - Encrypted memory for the onchain economy.</span>
         </div>
         <div className="flex gap-5">
           <Link to="/install" className="hover:text-ink">

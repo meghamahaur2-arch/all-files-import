@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { Topbar } from "@/components/app/Topbar";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { Chrome, Download, FileSearch, PanelRightOpen, RadioTower, RefreshCw } from "lucide-react";
@@ -36,7 +36,7 @@ function WalletAssist() {
               <Download className="h-4 w-4 text-mint" /> Install extension
             </div>
             <p className="mt-2 text-sm leading-6 text-ink/82">
-              Get the PayMemo browser extension for the full experience — popup memo prompts, side
+              Get the PayMemo browser extension for the full experience - popup memo prompts, side
               panel review, and pre-signature capture on any dApp.
             </p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-ink group-hover:underline">

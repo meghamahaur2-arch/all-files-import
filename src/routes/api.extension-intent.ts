@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { normalizeRecord, payMemoRecordSchema } from "@/lib/paymemo-schema";
 import {
@@ -9,6 +9,30 @@ import {
 } from "@/lib/server/paymemo-db";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { requireWalletAuth } from "@/lib/server/wallet-auth";
+
+// CORS - the PayMemo browser extension calls this endpoint from a
+// `chrome-extension://<id>` origin, which triggers a preflight OPTIONS
+// request whenever a custom header (`x-paymemo-install-token`) or
+// non-simple content-type (`application/json`) is in play. Without
+// explicit allow-* headers + an OPTIONS handler the preflight fails
+// silently and the extension's fetch() throws "Failed to fetch".
+//
+// Endpoint already auth's itself via the install token OR wallet
+// signature, so `*` for Allow-Origin is safe.
+const CORS_HEADERS: Record<string, string> = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers":
+    "content-type, x-paymemo-install-token, x-paymemo-wallet, x-paymemo-signature",
+  "access-control-max-age": "86400",
+};
+
+function withCors(response: Response): Response {
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    response.headers.set(key, value);
+  }
+  return response;
+}
 
 const extensionIntentSchema = payMemoRecordSchema.extend({
   method: z.string().optional(),
@@ -26,7 +50,7 @@ function normalizeAddress(value: string | null | undefined) {
  *
  *   1. The PayMemo browser extension, which sends `x-paymemo-install-token`
  *      matching a row in `extension_pairings`. This is the original auth
- *      path — used by the popup, content-script overlay, and sidepanel.
+ *      path - used by the popup, content-script overlay, and sidepanel.
  *
  *   2. The PayMemo dApp itself, which sends `x-paymemo-wallet` + the
  *      vault-unlock signature in `x-paymemo-signature`. The dApp uses
@@ -86,6 +110,14 @@ async function ensureCallerOwnsWallet(
 export const Route = createFileRoute("/api/extension-intent")({
   server: {
     handlers: {
+      // CORS preflight. The extension (chrome-extension:// origin) sends
+      // OPTIONS before the actual POST whenever a non-simple header like
+      // `x-paymemo-install-token` is present. Without this the browser
+      // blocks the POST and the fetch() throws "Failed to fetch".
+      OPTIONS: async () => {
+        return withCors(new Response(null, { status: 204 }));
+      },
+
       GET: async ({ request }: { request: Request }) => {
         const url = new URL(request.url);
         const wallets = url.searchParams.getAll("wallet").flatMap((value) =>
@@ -104,32 +136,36 @@ export const Route = createFileRoute("/api/extension-intent")({
             })
           : records;
 
-        return Response.json({
-          ok: true,
-          records: scoped,
-          storage: "database",
-          wallets,
-        });
+        return withCors(
+          Response.json({
+            ok: true,
+            records: scoped,
+            storage: "database",
+            wallets,
+          }),
+        );
       },
 
       POST: async ({ request }: { request: Request }) => {
         const limited = checkRateLimit(request, { scope: "extension-intent-post", limit: 60 });
-        if (!limited.ok) return limited.response;
+        if (!limited.ok) return withCors(limited.response);
 
         const body = await request.json().catch(() => null);
         const parsed = extensionIntentSchema.safeParse(body);
 
         if (!parsed.success) {
-          return Response.json(
-            { error: "Invalid extension intent", issues: parsed.error.flatten() },
-            { status: 400 },
+          return withCors(
+            Response.json(
+              { error: "Invalid extension intent", issues: parsed.error.flatten() },
+              { status: 400 },
+            ),
           );
         }
 
         const fromWallet = normalizeAddress(parsed.data.from);
         if (fromWallet) {
           const check = await ensureCallerOwnsWallet(request, fromWallet);
-          if (!check.ok) return check.response;
+          if (!check.ok) return withCors(check.response);
         }
 
         const record = normalizeRecord({
@@ -142,11 +178,13 @@ export const Route = createFileRoute("/api/extension-intent")({
 
         await addExtensionRecord(record);
 
-        return Response.json({
-          ok: true,
-          record,
-          storage: "database",
-        });
+        return withCors(
+          Response.json({
+            ok: true,
+            record,
+            storage: "database",
+          }),
+        );
       },
     },
   },

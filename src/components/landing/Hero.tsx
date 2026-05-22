@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Download, Play } from "lucide-react";
 import heroBg from "@/assets/hero-bg.png";
 
 /**
- * Editorial hero — themed via design tokens so light + dark both look intentional.
+ * Editorial hero - themed via design tokens so light + dark both look intentional.
  */
 export function Hero() {
   return (

@@ -1,4 +1,4 @@
-import type { PayMemoRecord } from "@/lib/paymemo-schema";
+﻿import type { PayMemoRecord } from "@/lib/paymemo-schema";
 import type { StoredVaultRecord } from "@/lib/paymemo-vault";
 
 type PayMemoDatabase = {
@@ -215,7 +215,7 @@ export async function writePayMemoDb(
   updater: (db: PayMemoDatabase) => PayMemoDatabase | Promise<PayMemoDatabase>,
 ) {
   // When Supabase is the source of truth (production / Vercel) we never
-  // touch the JSON file — it would throw EACCES on a read-only filesystem
+  // touch the JSON file - it would throw EACCES on a read-only filesystem
   // and bubble up as a confusing "Unable to clear database" error. Each
   // mutation function already writes to Supabase before calling us; here
   // we just return a fresh in-memory snapshot so callers stay happy.
@@ -304,7 +304,7 @@ export async function listVaultRecords(walletAddress: string) {
  * Returns the set of tx hashes that are already memo'd in the vault for any
  * of the given owner wallets. The server-side Morph scanner uses this to
  * skip transactions the user has already explained via /app/send or via
- * the Review-confirm flow — they shouldn't bounce back into Needs Review.
+ * the Review-confirm flow - they shouldn't bounce back into Needs Review.
  */
 export async function listKnownVaultTxHashes(walletAddresses: string[]) {
   const wallets = walletAddresses.map((wallet) => wallet.toLowerCase());
@@ -399,7 +399,7 @@ export async function deleteUserDatabase(walletAddress: string) {
       safeDelete(`extension_pairings?wallet_address=eq.${encodeURIComponent(walletKey)}`),
     ]);
 
-    // No JSON-file mirror on Vercel — Supabase is the only source of truth.
+    // No JSON-file mirror on Vercel - Supabase is the only source of truth.
     return {
       deleted: errors.length === 0,
       storage: "supabase" as const,
@@ -757,7 +757,7 @@ export async function listExtensionPairings(walletAddress: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Watched wallets — server-side chain-watch list. Owned by the user's connected
+// Watched wallets - server-side chain-watch list. Owned by the user's connected
 // wallet (owner_wallet); contains addresses the cron / on-load scan should sweep.
 // ---------------------------------------------------------------------------
 
