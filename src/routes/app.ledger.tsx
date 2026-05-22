@@ -26,6 +26,8 @@ export const Route = createFileRoute("/app/ledger")({
 type LedgerRow = {
   id: string;
   date: string;
+  /** Epoch milliseconds — drives the date-range filter. */
+  dateMs: number;
   hash: string;
   amount: string;
   token: string;
@@ -64,6 +66,126 @@ const statuses = [
   "needs-review",
   "rejected",
 ];
+
+// -- Date range presets ----------------------------------------------------
+// Each preset is a function from `now` → `{ from, to }` epoch range. `null`
+// means "no bound on that side". The financial-year presets use April→March
+// (Indian / UK / SG / Japan FY) since that's the most common globally; if
+// you want a different FY (Jul–Jun for AU/NZ, Oct–Sep for US federal) just
+// add another entry below.
+
+export type DateRangeKey =
+  | "all"
+  | "today"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "6m"
+  | "12m"
+  | "this-month"
+  | "last-month"
+  | "this-quarter"
+  | "ytd"
+  | "last-year"
+  | "fy"
+  | "fy-prev"
+  | "custom";
+
+type Range = { from: number | null; to: number | null };
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+function startOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getTime();
+}
+function endOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).getTime();
+}
+
+const FY_START_MONTH = 3; // 0-indexed: 3 = April. Change to 6=Jul, 9=Oct, etc.
+
+function fyBoundsFor(date: Date): Range {
+  const year = date.getMonth() >= FY_START_MONTH ? date.getFullYear() : date.getFullYear() - 1;
+  return {
+    from: startOfMonth(year, FY_START_MONTH),
+    to: new Date(year + 1, FY_START_MONTH, 0, 23, 59, 59, 999).getTime(),
+  };
+}
+
+function rangeForPreset(key: DateRangeKey, now = new Date()): Range {
+  const today = startOfDay(now);
+  switch (key) {
+    case "all":
+      return { from: null, to: null };
+    case "today":
+      return { from: today, to: endOfDay(now) };
+    case "7d":
+      return { from: today - 6 * 86_400_000, to: endOfDay(now) };
+    case "30d":
+      return { from: today - 29 * 86_400_000, to: endOfDay(now) };
+    case "90d":
+      return { from: today - 89 * 86_400_000, to: endOfDay(now) };
+    case "6m":
+      return { from: startOfMonth(now.getFullYear(), now.getMonth() - 5), to: endOfDay(now) };
+    case "12m":
+      return { from: startOfMonth(now.getFullYear() - 1, now.getMonth() + 1), to: endOfDay(now) };
+    case "this-month":
+      return {
+        from: startOfMonth(now.getFullYear(), now.getMonth()),
+        to: endOfDay(now),
+      };
+    case "last-month":
+      return {
+        from: startOfMonth(now.getFullYear(), now.getMonth() - 1),
+        to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).getTime(),
+      };
+    case "this-quarter": {
+      const qStart = Math.floor(now.getMonth() / 3) * 3;
+      return { from: startOfMonth(now.getFullYear(), qStart), to: endOfDay(now) };
+    }
+    case "ytd":
+      return { from: startOfMonth(now.getFullYear(), 0), to: endOfDay(now) };
+    case "last-year":
+      return {
+        from: startOfMonth(now.getFullYear() - 1, 0),
+        to: new Date(now.getFullYear(), 0, 0, 23, 59, 59, 999).getTime(),
+      };
+    case "fy":
+      return fyBoundsFor(now);
+    case "fy-prev": {
+      const prev = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      return fyBoundsFor(prev);
+    }
+    case "custom":
+      return { from: null, to: null }; // resolved from user input separately
+  }
+}
+
+const DATE_RANGE_OPTIONS: { value: DateRangeKey; label: string }[] = [
+  { value: "all", label: "All time" },
+  { value: "today", label: "Today" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
+  { value: "this-month", label: "This month" },
+  { value: "last-month", label: "Last month" },
+  { value: "this-quarter", label: "This quarter" },
+  { value: "6m", label: "Last 6 months" },
+  { value: "12m", label: "Last 12 months" },
+  { value: "ytd", label: "Year to date" },
+  { value: "last-year", label: "Last calendar year" },
+  { value: "fy", label: "Financial year (Apr–Mar)" },
+  { value: "fy-prev", label: "Previous FY (Apr–Mar)" },
+  { value: "custom", label: "Custom range…" },
+];
+
+function formatRangeLabel(range: Range) {
+  if (range.from === null && range.to === null) return "all time";
+  const fmt = (ms: number | null) =>
+    ms ? new Date(ms).toLocaleDateString() : "…";
+  return `${fmt(range.from)} → ${fmt(range.to)}`;
+}
 
 function downloadCsv(rows: LedgerRow[]) {
   const csvRows = [
@@ -105,6 +227,9 @@ function Ledger() {
   const [cat, setCat] = useState("All");
   const [status, setStatus] = useState("All");
   const [q, setQ] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeKey>("all");
+  const [customFrom, setCustomFrom] = useState(""); // yyyy-mm-dd
+  const [customTo, setCustomTo] = useState("");
   const [vaultRows, setVaultRows] = useState<LedgerRow[]>([]);
   const [editing, setEditing] = useState<LedgerRow | null>(null);
   const [saveStatus, setSaveStatus] = useState("");
@@ -122,6 +247,7 @@ function Ledger() {
       const lockedRows: LedgerRow[] = records.map((record) => ({
         id: record.id,
         date: new Date(record.publicRecord.createdAt ?? record.updatedAt).toLocaleDateString(),
+        dateMs: new Date(record.publicRecord.createdAt ?? record.updatedAt).getTime(),
         hash: record.publicRecord.txHash ?? "pending",
         amount: record.publicRecord.amount,
         token: record.publicRecord.token,
@@ -146,6 +272,7 @@ function Ledger() {
         return {
           id: record.id,
           date: new Date(record.publicRecord.createdAt ?? record.updatedAt).toLocaleDateString(),
+        dateMs: new Date(record.publicRecord.createdAt ?? record.updatedAt).getTime(),
           hash: record.publicRecord.txHash ?? "pending",
           amount: record.publicRecord.amount,
           token: record.publicRecord.token,
@@ -221,18 +348,34 @@ function Ledger() {
     await loadVaultRows();
   }
 
+  const activeRange = useMemo<Range>(() => {
+    if (dateRange === "custom") {
+      return {
+        from: customFrom ? new Date(`${customFrom}T00:00:00`).getTime() : null,
+        to: customTo ? new Date(`${customTo}T23:59:59.999`).getTime() : null,
+      };
+    }
+    return rangeForPreset(dateRange);
+  }, [dateRange, customFrom, customTo]);
+
   const rows = useMemo(
     () =>
-      vaultRows.filter(
-        (t) =>
-          (cat === "All" || t.category === cat) &&
-          (status === "All" || t.status === status) &&
-          (!q ||
-            t.counterparty.toLowerCase().includes(q.toLowerCase()) ||
-            t.note.toLowerCase().includes(q.toLowerCase()) ||
-            t.hash.includes(q)),
-      ),
-    [vaultRows, cat, status, q],
+      vaultRows.filter((t) => {
+        if (cat !== "All" && t.category !== cat) return false;
+        if (status !== "All" && t.status !== status) return false;
+        if (q) {
+          const needle = q.toLowerCase();
+          const matches =
+            t.counterparty.toLowerCase().includes(needle) ||
+            t.note.toLowerCase().includes(needle) ||
+            t.hash.includes(q);
+          if (!matches) return false;
+        }
+        if (activeRange.from !== null && t.dateMs < activeRange.from) return false;
+        if (activeRange.to !== null && t.dateMs > activeRange.to) return false;
+        return true;
+      }),
+    [vaultRows, cat, status, q, activeRange],
   );
 
   return (
@@ -263,15 +406,61 @@ function Ledger() {
             options={statuses}
             icon={<Filter className="h-3.5 w-3.5" />}
           />
-          <button className="inline-flex items-center gap-2 rounded-xl border border-ink/35 bg-cream/60 px-3 py-2 text-sm">
-            <Calendar className="h-3.5 w-3.5" /> Last 30 days
-          </button>
+          <label className="inline-flex items-center gap-2 rounded-xl border border-ink/35 bg-cream/60 px-3 py-2 text-sm">
+            <Calendar className="h-3.5 w-3.5 text-ink/72" />
+            <span className="text-[10px] uppercase tracking-widest text-ink/72">
+              Date range
+            </span>
+            <select
+              value={dateRange}
+              onChange={(event) => setDateRange(event.target.value as DateRangeKey)}
+              className="bg-transparent text-sm font-semibold outline-none"
+            >
+              {DATE_RANGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {dateRange === "custom" && (
+            <div className="inline-flex items-center gap-2 rounded-xl border border-ink/35 bg-cream/60 px-3 py-2 text-sm">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(event) => setCustomFrom(event.target.value)}
+                className="bg-transparent text-sm outline-none"
+                aria-label="From"
+              />
+              <span className="text-ink/72">→</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(event) => setCustomTo(event.target.value)}
+                className="bg-transparent text-sm outline-none"
+                aria-label="To"
+              />
+            </div>
+          )}
+
           <button
             onClick={() => downloadCsv(rows)}
             className="ml-auto inline-flex items-center gap-2 rounded-xl bg-ink text-cream px-3 py-2 text-sm font-semibold"
           >
             <Download className="h-4 w-4" /> Export CSV
           </button>
+        </div>
+
+        {/* Range summary so the user can see what they're filtering by */}
+        <div className="text-xs text-ink/72">
+          Showing <strong className="text-ink">{rows.length}</strong> of{" "}
+          <strong className="text-ink">{vaultRows.length}</strong> records{" "}
+          {dateRange !== "all" && (
+            <span>
+              · range: <strong className="text-ink">{formatRangeLabel(activeRange)}</strong>
+            </span>
+          )}
         </div>
 
         <div className="rounded-3xl border border-ink/35 bg-white shadow-soft overflow-x-auto">

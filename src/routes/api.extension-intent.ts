@@ -8,6 +8,7 @@ import {
   listExtensionRecords,
 } from "@/lib/server/paymemo-db";
 import { checkRateLimit } from "@/lib/server/rate-limit";
+import { requireWalletAuth } from "@/lib/server/wallet-auth";
 
 const extensionIntentSchema = payMemoRecordSchema.extend({
   method: z.string().optional(),
@@ -19,27 +20,39 @@ function normalizeAddress(value: string | null | undefined) {
   return /^0x[a-f0-9]{40}$/.test(address) ? address : "";
 }
 
-async function ensureInstallTokenForWallet(
+/**
+ * Authenticates a write to `/api/extension-intent`. A wallet's extension
+ * records can be created by either:
+ *
+ *   1. The PayMemo browser extension, which sends `x-paymemo-install-token`
+ *      matching a row in `extension_pairings`. This is the original auth
+ *      path — used by the popup, content-script overlay, and sidepanel.
+ *
+ *   2. The PayMemo dApp itself, which sends `x-paymemo-wallet` + the
+ *      vault-unlock signature in `x-paymemo-signature`. The dApp uses
+ *      this path when the user clicks "Record review" in /app/review,
+ *      since the dApp has no install token of its own.
+ *
+ * Either is sufficient. We only require *some* form of proof that the
+ * caller actually controls (or has been paired with) the from-wallet
+ * once that wallet has any pairings on file. Wallets with no pairings
+ * are still first-touch trusted so a brand-new extension install can
+ * write its first record before the pairing is recorded.
+ */
+async function ensureCallerOwnsWallet(
   request: Request,
   wallet: string,
 ): Promise<{ ok: true } | { ok: false; response: Response }> {
   if (!wallet) return { ok: true };
+
   const pairings = await listExtensionPairings(wallet);
-  if (!pairings.length) return { ok: true }; // No pairing recorded yet — first-touch trust.
+  if (!pairings.length) return { ok: true };
 
+  // Path 1: extension install token
   const token = request.headers.get("x-paymemo-install-token")?.trim();
-  if (!token) {
-    return {
-      ok: false,
-      response: Response.json(
-        { error: "Missing extension install token for paired wallet." },
-        { status: 401 },
-      ),
-    };
-  }
-
-  const ok = await isExtensionWalletPaired(token, wallet);
-  if (!ok) {
+  if (token) {
+    const ok = await isExtensionWalletPaired(token, wallet);
+    if (ok) return { ok: true };
     return {
       ok: false,
       response: Response.json(
@@ -49,7 +62,25 @@ async function ensureInstallTokenForWallet(
     };
   }
 
-  return { ok: true };
+  // Path 2: dApp wallet signature
+  const headerWallet = request.headers.get("x-paymemo-wallet")?.toLowerCase();
+  const headerSig = request.headers.get("x-paymemo-signature");
+  if (headerWallet && headerSig) {
+    const auth = await requireWalletAuth(request, wallet);
+    if (auth.ok) return { ok: true };
+    return { ok: false, response: auth.response };
+  }
+
+  return {
+    ok: false,
+    response: Response.json(
+      {
+        error:
+          "Auth required for paired wallet. Send either x-paymemo-install-token (extension) or x-paymemo-wallet + x-paymemo-signature (dApp vault).",
+      },
+      { status: 401 },
+    ),
+  };
 }
 
 export const Route = createFileRoute("/api/extension-intent")({
@@ -97,7 +128,7 @@ export const Route = createFileRoute("/api/extension-intent")({
 
         const fromWallet = normalizeAddress(parsed.data.from);
         if (fromWallet) {
-          const check = await ensureInstallTokenForWallet(request, fromWallet);
+          const check = await ensureCallerOwnsWallet(request, fromWallet);
           if (!check.ok) return check.response;
         }
 
@@ -120,3 +151,4 @@ export const Route = createFileRoute("/api/extension-intent")({
     },
   },
 });
+

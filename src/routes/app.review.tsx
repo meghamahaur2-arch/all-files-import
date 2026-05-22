@@ -8,6 +8,7 @@ import {
   decryptPrivateMetadata,
   encryptPrivateMetadata,
   getRememberedVaultKey,
+  getVaultAuthHeaders,
   readVaultSession,
 } from "@/lib/crypto-vault";
 import {
@@ -285,7 +286,14 @@ function ReviewQueue() {
 
     const response = await fetch("/api/extension-intent", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        // Vault auth so the server accepts the write even when the user's
+        // wallet has been paired with the browser extension. Without this
+        // the endpoint returns 401 "Missing extension install token for
+        // paired wallet" because the dApp has no install token of its own.
+        ...getVaultAuthHeaders(),
+      },
       body: JSON.stringify(confirmedPayload),
     }).catch((networkError) => {
       console.warn("[paymemo] /api/extension-intent fetch failed", networkError);
