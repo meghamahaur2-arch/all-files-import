@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1100" font-family="Geist, ui-sans-serif, system-ui, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0E0E0E"/>
+    </marker>
+    <marker id="arrowMint" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#A8F139"/>
+    </marker>
+    <marker id="arrowPink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ff5c7a"/>
+    </marker>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A8F139"/>
+      <stop offset="1" stop-color="#0E0E0E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1480" height="1100" fill="#FAFAF6"/>
+
+  <!-- Title row with logo mark -->
+  <g transform="translate(40,28)">
+    <rect width="48" height="48" rx="12" fill="url(#logoGrad)"/>
+    <rect x="14" y="13" width="8" height="26" rx="4" fill="#fff"/>
+    <circle cx="30" cy="21" r="11" fill="#fff"/>
+    <circle cx="30" cy="21" r="4" fill="#0E0E0E"/>
+    <circle cx="40" cy="40" r="2.5" fill="#A8F139"/>
+  </g>
+  <text x="100" y="48" font-size="22" font-weight="700" fill="#0E0E0E">PayMemo  ·  Architecture</text>
+  <text x="100" y="68" font-size="12" fill="#5b5b5b">Private memory layer for every Morph transaction. Built on TanStack Start + Supabase + Railway. Morph Hoodi testnet.</text>
+
+  <!-- ============ TIER 1: USER LAYER ============ -->
+  <g>
+    <rect x="40" y="100" width="1400" height="120" rx="18" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1.5"/>
+    <text x="60" y="125" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">USER</text>
+
+    <!-- User Browser -->
+    <rect x="80" y="140" width="320" height="60" rx="12" fill="#fff" stroke="#7DD3FC"/>
+    <text x="100" y="165" font-size="14" font-weight="700" fill="#0E0E0E">Browser</text>
+    <text x="100" y="184" font-size="12" fill="#444">Chrome, Brave, Edge, Arc, Bitget Wallet browser</text>
+
+    <!-- Extension -->
+    <rect x="440" y="140" width="320" height="60" rx="12" fill="#fff" stroke="#7DD3FC"/>
+    <text x="460" y="165" font-size="14" font-weight="700" fill="#0E0E0E">PayMemo Browser Extension</text>
+    <text x="460" y="184" font-size="12" fill="#444">Chrome Manifest V3 · sideloaded zip</text>
+
+    <!-- Wallets -->
+    <rect x="800" y="140" width="620" height="60" rx="12" fill="#fff" stroke="#7DD3FC"/>
+    <text x="820" y="165" font-size="14" font-weight="700" fill="#0E0E0E">Injected Wallets (EIP-6963)</text>
+    <text x="820" y="184" font-size="12" fill="#444">MetaMask · Rabby · Bitget · Trust · Phantom EVM · OKX · Coinbase · Binance</text>
+  </g>
+
+  <!-- ============ TIER 2: CLIENT + EXTENSION INTERNALS ============ -->
+  <g>
+    <!-- Left column: dApp client -->
+    <rect x="40" y="240" width="700" height="220" rx="18" fill="#DBEAFE" stroke="#60A5FA" stroke-width="1.5"/>
+    <text x="60" y="265" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">DAPP CLIENT  ·  TanStack Start React 19 SSR</text>
+
+    <rect x="60" y="282" width="195" height="36" rx="9" fill="#fff" stroke="#60A5FA"/>
+    <text x="71" y="305" font-size="12" font-weight="600">/app  Dashboard + Wallet connect</text>
+
+    <rect x="265" y="282" width="195" height="36" rx="9" fill="#fff" stroke="#60A5FA"/>
+    <text x="276" y="305" font-size="12" font-weight="600">/app/send  Mode 1 dApp pay</text>
+
+    <rect x="470" y="282" width="250" height="36" rx="9" fill="#fff" stroke="#60A5FA"/>
+    <text x="481" y="305" font-size="12" font-weight="600">/app/review  Pending + Completed</text>
+
+    <rect x="60" y="330" width="195" height="36" rx="9" fill="#fff" stroke="#60A5FA"/>
+    <text x="71" y="353" font-size="12" font-weight="600">/app/ledger  Search + CSV</text>
+
+    <rect x="265" y="330" width="195" height="36" rx="9" fill="#fff" stroke="#60A5FA"/>
+    <text x="276" y="353" font-size="12" font-weight="600">/app/batch  Batch payouts</text>
+
+    <rect x="470" y="330" width="250" height="36" rx="9" fill="#fff" stroke="#60A5FA"/>
+    <text x="481" y="353" font-size="12" font-weight="600">/install  Extension download</text>
+
+    <!-- Encryption note -->
+    <rect x="60" y="378" width="660" height="64" rx="10" fill="#0E0E0E"/>
+    <text x="78" y="400" font-size="12" font-weight="700" fill="#A8F139">CLIENT-SIDE ENCRYPTION</text>
+    <text x="78" y="420" font-size="12" fill="#fff">AES-GCM. Key = SHA-256(wallet signature). Private fields are encrypted</text>
+    <text x="78" y="436" font-size="12" fill="#fff">in the browser; server only ever sees ciphertext.</text>
+
+    <!-- Right column: Extension internals -->
+    <rect x="760" y="240" width="660" height="220" rx="18" fill="#D1FAE5" stroke="#34D399" stroke-width="1.5"/>
+    <text x="780" y="265" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">EXTENSION INTERNALS  ·  Chrome MV3</text>
+
+    <rect x="780" y="282" width="190" height="36" rx="9" fill="#fff" stroke="#34D399"/>
+    <text x="791" y="305" font-size="12" font-weight="600">popup.js  toolbar</text>
+
+    <rect x="980" y="282" width="220" height="36" rx="9" fill="#fff" stroke="#34D399"/>
+    <text x="991" y="305" font-size="12" font-weight="600">sidepanel.js  capture form</text>
+
+    <rect x="1210" y="282" width="190" height="36" rx="9" fill="#fff" stroke="#34D399"/>
+    <text x="1221" y="305" font-size="12" font-weight="600">background.js  SW</text>
+
+    <rect x="780" y="330" width="290" height="36" rx="9" fill="#fff" stroke="#34D399"/>
+    <text x="791" y="353" font-size="12" font-weight="600">content.js  in-page capture overlay</text>
+
+    <rect x="1080" y="330" width="320" height="36" rx="9" fill="#fff" stroke="#34D399"/>
+    <text x="1091" y="353" font-size="12" font-weight="600">inpage.js  window.ethereum wrap (EIP-6963)</text>
+
+    <rect x="780" y="378" width="620" height="64" rx="10" fill="#0E0E0E"/>
+    <text x="798" y="400" font-size="12" font-weight="700" fill="#A8F139">CHAIN WATCH (background)</text>
+    <text x="798" y="420" font-size="12" fill="#fff">Polls Morph RPC every 2.5s. On detected tx for a watched</text>
+    <text x="798" y="436" font-size="12" fill="#fff">wallet, opens popup memo prompt → syncs to server.</text>
+  </g>
+
+  <!-- ============ TIER 3: VERCEL API ============ -->
+  <g>
+    <rect x="40" y="480" width="1400" height="180" rx="18" fill="#FCE7F3" stroke="#F472B6" stroke-width="1.5"/>
+    <text x="60" y="505" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">VERCEL  ·  Build Output API v3 · Node 22 SSR function · Edge cache</text>
+
+    <rect x="60" y="522" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="71" y="545" font-size="12" font-weight="600">/api/vault-records</text>
+
+    <rect x="285" y="522" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="296" y="545" font-size="12" font-weight="600">/api/extension-intent</text>
+
+    <rect x="510" y="522" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="521" y="545" font-size="12" font-weight="600">/api/watched-wallets</text>
+
+    <rect x="735" y="522" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="746" y="545" font-size="12" font-weight="600">/api/cron/scan-morph</text>
+
+    <rect x="960" y="522" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="971" y="545" font-size="12" font-weight="600">/api/agent-memory</text>
+
+    <rect x="1185" y="522" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="1196" y="545" font-size="12" font-weight="600">/api/extension-pair</text>
+
+    <rect x="60" y="570" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="71" y="593" font-size="12" font-weight="600">/api/invoices</text>
+
+    <rect x="285" y="570" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="296" y="593" font-size="12" font-weight="600">/api/batch-payouts</text>
+
+    <rect x="510" y="570" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="521" y="593" font-size="12" font-weight="600">/api/agent-payment-intent</text>
+
+    <rect x="735" y="570" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="746" y="593" font-size="12" font-weight="600">/api/public-invoice</text>
+
+    <rect x="960" y="570" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="971" y="593" font-size="12" font-weight="600">/api/database-reset</text>
+
+    <rect x="1185" y="570" width="215" height="36" rx="9" fill="#fff" stroke="#F472B6"/>
+    <text x="1196" y="593" font-size="12" font-weight="600">/api/health</text>
+
+    <!-- Cron note -->
+    <rect x="60" y="618" width="660" height="30" rx="8" fill="#0E0E0E"/>
+    <text x="78" y="638" font-size="12" fill="#fff">Vercel Daily Cron (Hobby) → GET /api/cron/scan-morph → sweeps Morph for watched wallets</text>
+
+    <rect x="740" y="618" width="660" height="30" rx="8" fill="#0E0E0E"/>
+    <text x="758" y="638" font-size="12" fill="#fff">All POSTs auth via wallet signature OR install token. RLS service-role to Supabase.</text>
+  </g>
+
+  <!-- ============ TIER 4: SUPABASE ============ -->
+  <g>
+    <rect x="40" y="680" width="900" height="180" rx="18" fill="#FED7AA" stroke="#FB923C" stroke-width="1.5"/>
+    <text x="60" y="705" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">SUPABASE  ·  Postgres + Row-Level Security (service role only)</text>
+
+    <g transform="translate(60,722)">
+      <rect width="270" height="60" rx="10" fill="#fff" stroke="#FB923C"/>
+      <text x="14" y="22" font-weight="700" font-size="13">vault_records</text>
+      <text x="14" y="40" font-size="11" fill="#444">public_record + encrypted_metadata (AES-GCM)</text>
+      <text x="14" y="54" font-size="11" fill="#444">Ledger source of truth, dApp confirmed sends</text>
+    </g>
+    <g transform="translate(340,722)">
+      <rect width="270" height="60" rx="10" fill="#fff" stroke="#FB923C"/>
+      <text x="14" y="22" font-weight="700" font-size="13">extension_records</text>
+      <text x="14" y="40" font-size="11" fill="#444">Chain-watch detections + extension memo saves</text>
+      <text x="14" y="54" font-size="11" fill="#444">Review queue feed, deduped by txHash</text>
+    </g>
+    <g transform="translate(620,722)">
+      <rect width="300" height="60" rx="10" fill="#fff" stroke="#FB923C"/>
+      <text x="14" y="22" font-weight="700" font-size="13">watched_wallets</text>
+      <text x="14" y="40" font-size="11" fill="#444">Per-user watch list. Server cron + Railway</text>
+      <text x="14" y="54" font-size="11" fill="#444">worker scan only these addresses.</text>
+    </g>
+
+    <g transform="translate(60,790)">
+      <rect width="270" height="60" rx="10" fill="#fff" stroke="#FB923C"/>
+      <text x="14" y="22" font-weight="700" font-size="13">extension_pairings</text>
+      <text x="14" y="40" font-size="11" fill="#444">install_token ↔ wallet</text>
+      <text x="14" y="54" font-size="11" fill="#444">Extension auth surface</text>
+    </g>
+    <g transform="translate(340,790)">
+      <rect width="270" height="60" rx="10" fill="#fff" stroke="#FB923C"/>
+      <text x="14" y="22" font-weight="700" font-size="13">agent_memory_records</text>
+      <text x="14" y="40" font-size="11" fill="#444">AI agent payment intents and reasons</text>
+      <text x="14" y="54" font-size="11" fill="#444">/api/agent-memory ingestion</text>
+    </g>
+    <g transform="translate(620,790)">
+      <rect width="300" height="60" rx="10" fill="#fff" stroke="#FB923C"/>
+      <text x="14" y="22" font-weight="700" font-size="13">paymemo_domain_records</text>
+      <text x="14" y="40" font-size="11" fill="#444">invoice / batch-payout / agent-payment-intent</text>
+      <text x="14" y="54" font-size="11" fill="#444">Encrypted domain rows</text>
+    </g>
+  </g>
+
+  <!-- ============ TIER 4-RIGHT: RAILWAY ============ -->
+  <g>
+    <rect x="960" y="680" width="480" height="180" rx="18" fill="#E9D5FF" stroke="#A78BFA" stroke-width="1.5"/>
+    <text x="980" y="705" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">RAILWAY  ·  Real-time block trigger</text>
+
+    <rect x="980" y="722" width="440" height="60" rx="10" fill="#fff" stroke="#A78BFA"/>
+    <text x="994" y="744" font-size="13" font-weight="700">worker/index.js  Node 20+</text>
+    <text x="994" y="762" font-size="11" fill="#444">Polls eth_blockNumber every 2s. On new block →</text>
+    <text x="994" y="776" font-size="11" fill="#444">GET /api/cron/scan-morph (Bearer CRON_SECRET).</text>
+
+    <rect x="980" y="790" width="440" height="60" rx="10" fill="#0E0E0E"/>
+    <text x="998" y="812" font-size="12" font-weight="700" fill="#A8F139">~2 SECOND DETECTION</text>
+    <text x="998" y="830" font-size="11" fill="#fff">Free tier ~500h/mo. Failure mode: Vercel</text>
+    <text x="998" y="844" font-size="11" fill="#fff">daily cron + page-load catch-up still works.</text>
+  </g>
+
+  <!-- ============ TIER 5: MORPH ============ -->
+  <g>
+    <rect x="40" y="880" width="1400" height="120" rx="18" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="60" y="905" font-weight="700" font-size="13" fill="#0E0E0E" letter-spacing="0.08em">MORPH HOODI  ·  L2 Testnet · Chain ID 2910</text>
+
+    <rect x="60" y="922" width="430" height="60" rx="10" fill="#fff" stroke="#F59E0B"/>
+    <text x="74" y="944" font-size="13" font-weight="700">JSON-RPC endpoint</text>
+    <text x="74" y="962" font-size="11" fill="#444">https://rpc-hoodi.morph.network</text>
+    <text x="74" y="976" font-size="11" fill="#444">eth_blockNumber, eth_getBlockByNumber, eth_getLogs, eth_sendTransaction</text>
+
+    <rect x="510" y="922" width="430" height="60" rx="10" fill="#fff" stroke="#F59E0B"/>
+    <text x="524" y="944" font-size="13" font-weight="700">Tokens</text>
+    <text x="524" y="962" font-size="11" fill="#444">Native ETH · L2USDC (0x1178…a227)</text>
+    <text x="524" y="976" font-size="11" fill="#444">WETH (0x5300…0011) · BGB (env-configurable)</text>
+
+    <rect x="960" y="922" width="460" height="60" rx="10" fill="#fff" stroke="#F59E0B"/>
+    <text x="974" y="944" font-size="13" font-weight="700">Contracts</text>
+    <text x="974" y="962" font-size="11" fill="#444">contracts/BatchPayout.sol (ETH + ERC-20 batch payout)</text>
+    <text x="974" y="976" font-size="11" fill="#444">Explorer: explorer-hoodi.morph.network</text>
+  </g>
+
+  <!-- ============ ARROWS / DATA FLOWS ============ -->
+  <!-- User → dApp client -->
+  <path d="M 240 200 L 240 240" stroke="#0E0E0E" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- User → Extension internals -->
+  <path d="M 600 200 L 600 240" stroke="#0E0E0E" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Extension → wallets (signing pre-broadcast) -->
+  <path d="M 760 170 L 800 170" stroke="#0E0E0E" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- dApp client → Vercel API -->
+  <path d="M 390 460 L 390 480" stroke="#A8F139" stroke-width="2" marker-end="url(#arrowMint)"/>
+  <text x="395" y="475" font-size="11" font-weight="600" fill="#0E0E0E">vault, ledger, review</text>
+  <!-- Extension internals → Vercel API -->
+  <path d="M 1090 460 L 1090 480" stroke="#A8F139" stroke-width="2" marker-end="url(#arrowMint)"/>
+  <text x="1095" y="475" font-size="11" font-weight="600" fill="#0E0E0E">extension-intent sync</text>
+
+  <!-- Vercel → Supabase -->
+  <path d="M 490 660 L 490 680" stroke="#0E0E0E" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="500" y="675" font-size="11" font-weight="600" fill="#0E0E0E">service-role REST</text>
+
+  <!-- Vercel → Morph (RPC) -->
+  <path d="M 845 660 L 845 880" stroke="#0E0E0E" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="855" y="770" font-size="11" font-weight="600" fill="#0E0E0E">scan-morph: RPC</text>
+
+  <!-- Railway → Vercel cron -->
+  <path d="M 1200 680 L 1200 660" stroke="#ff5c7a" stroke-width="2" marker-end="url(#arrowPink)"/>
+  <text x="1118" y="675" font-size="11" font-weight="600" fill="#0E0E0E">trigger /cron/scan-morph</text>
+
+  <!-- Railway → Morph -->
+  <path d="M 1200 860 L 1200 880" stroke="#0E0E0E" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="1208" y="876" font-size="11" font-weight="600" fill="#0E0E0E">eth_blockNumber</text>
+
+  <!-- Extension chain watch → Morph -->
+  <path d="M 1380 460 C 1430 600, 1430 700, 1390 880" stroke="#0E0E0E" stroke-width="1.2" stroke-dasharray="6 4" fill="none" marker-end="url(#arrow)"/>
+  <text x="1395" y="600" font-size="11" font-weight="600" fill="#0E0E0E">extension</text>
+  <text x="1395" y="615" font-size="11" font-weight="600" fill="#0E0E0E">chain watch</text>
+
+  <!-- dApp /send → Morph (signed tx broadcast) -->
+  <path d="M 340 318 C 280 700, 200 700, 200 880" stroke="#A8F139" stroke-width="1.5" fill="none" marker-end="url(#arrowMint)"/>
+  <text x="50" y="730" font-size="11" font-weight="600" fill="#0E0E0E">dApp send tx</text>
+  <text x="50" y="745" font-size="11" font-weight="600" fill="#0E0E0E">broadcast</text>
+
+  <!-- Legend -->
+  <g transform="translate(40,1020)">
+    <text x="0" y="14" font-size="11" font-weight="700">LEGEND</text>
+    <line x1="0" y1="32" x2="40" y2="32" stroke="#0E0E0E" stroke-width="1.5"/>
+    <text x="48" y="36" font-size="11">HTTPS / postMessage</text>
+    <line x1="200" y1="32" x2="240" y2="32" stroke="#A8F139" stroke-width="2"/>
+    <text x="248" y="36" font-size="11">App data path (vault + review)</text>
+    <line x1="460" y1="32" x2="500" y2="32" stroke="#ff5c7a" stroke-width="2"/>
+    <text x="508" y="36" font-size="11">Real-time trigger</text>
+    <line x1="640" y1="32" x2="680" y2="32" stroke="#0E0E0E" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="688" y="36" font-size="11">JSON-RPC to Morph</text>
+  </g>
+</svg>
