@@ -1,10 +1,26 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { Volume2, VolumeX } from "lucide-react";
 
 const VIDEO_SRC = "/demo.mp4";
 
 export function ScrollyVideo() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+
+  const toggleMuted = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const next = !muted;
+    v.muted = next;
+    setMuted(next);
+    // Some browsers pause when audio context changes; ensure playback continues.
+    if (!next) {
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  };
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -49,6 +65,7 @@ export function ScrollyVideo() {
           className="relative overflow-hidden bg-ink"
         >
           <video
+            ref={videoRef}
             src={VIDEO_SRC}
             autoPlay
             muted
@@ -58,6 +75,16 @@ export function ScrollyVideo() {
             className="h-full w-full object-cover"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent" />
+          <button
+            type="button"
+            onClick={toggleMuted}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+            aria-pressed={!muted}
+            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 rounded-full bg-ink/70 px-3 py-2 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-ink/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            <span>{muted ? "Tap for sound" : "Sound on"}</span>
+          </button>
         </motion.div>
       </div>
     </section>
