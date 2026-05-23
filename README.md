@@ -239,7 +239,7 @@ Every table has Row-Level Security enabled with a `service_role` policy. The Ver
 4. Add environment variables (see above), including `CRON_SECRET`.
 5. Deploy.
 
-Verify at `https://<your-deploy>.vercel.app/api/health` — should report `database.reachable: true` and a recent Morph block height.
+Verify at `https://paymemo.vercel.app/api/health` — should report `database.reachable: true` and a recent Morph block height.
 
 The build emits a Vercel Build Output API v3 layout under `.vercel/output/`:
 - `static/` — every file from `dist/client/`
@@ -259,7 +259,7 @@ Fly.io and Render free tiers also work — see `worker/README.md` for those.
 
 Production Chrome Web Store listing is pending. For now, ship as a sideload:
 
-1. User visits `https://<your-deploy>/install`.
+1. User visits `https://paymemo.vercel.app/install`.
 2. Clicks Download → gets `paymemo-extension.zip`.
 3. Unzips → `chrome://extensions` → Developer mode → Load unpacked → pick the folder.
 
