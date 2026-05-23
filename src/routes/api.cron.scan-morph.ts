@@ -23,11 +23,17 @@ export const Route = createFileRoute("/api/cron/scan-morph")({
     handlers: {
       GET: async ({ request }: { request: Request }) => {
         const secret = process.env.CRON_SECRET;
-        if (secret) {
-          const header = request.headers.get("authorization") ?? "";
-          if (header !== `Bearer ${secret}`) {
-            return Response.json({ error: "Unauthorized" }, { status: 401 });
-          }
+        // Fail closed: never serve the global sweep unauthenticated.
+        // If CRON_SECRET is not set, treat as misconfiguration.
+        if (!secret) {
+          return Response.json(
+            { error: "CRON_SECRET is not configured on the server." },
+            { status: 503 },
+          );
+        }
+        const header = request.headers.get("authorization") ?? "";
+        if (header !== `Bearer ${secret}`) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
         try {
           const result = await scanAllEnabled();

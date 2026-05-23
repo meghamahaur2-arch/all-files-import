@@ -28,7 +28,6 @@ export const Route = createFileRoute("/api/health")({
         if (supabaseConfigured) {
           const t0 = Date.now();
           try {
-            // Cheapest read possible: list 1 row from a known table.
             const response = await fetch(`${supabaseUrl}/rest/v1/vault_records?select=id&limit=1`, {
               headers: {
                 apikey: supabaseKey,
@@ -39,10 +38,13 @@ export const Route = createFileRoute("/api/health")({
             if (response.ok) {
               supabaseReachable = true;
             } else {
+              // Generic status only — never expose the response body which
+              // can contain table names, JWT errors, or other internals.
               supabaseError = `HTTP ${response.status}`;
             }
-          } catch (error) {
-            supabaseError = error instanceof Error ? error.message : "unknown";
+          } catch {
+            // Avoid leaking driver / DNS error messages to unauthenticated callers.
+            supabaseError = "unreachable";
           }
         }
 

@@ -97,10 +97,7 @@ export const Route = createFileRoute("/api/invoice-payment")({
         }
 
         if (invoice.status === "paid") {
-          return Response.json(
-            { error: "Invoice already marked paid", invoice },
-            { status: 409 },
-          );
+          return Response.json({ error: "Invoice already marked paid", invoice }, { status: 409 });
         }
 
         if (invoice.status === "cancelled") {
@@ -129,7 +126,10 @@ export const Route = createFileRoute("/api/invoice-payment")({
         }
 
         if (!tx || !receipt) {
-          return Response.json({ error: "Transaction not found on Morph Hoodi yet" }, { status: 404 });
+          return Response.json(
+            { error: "Transaction not found on Morph Hoodi yet" },
+            { status: 404 },
+          );
         }
 
         if (receipt.status !== "0x1") {
@@ -139,6 +139,10 @@ export const Route = createFileRoute("/api/invoice-payment")({
         const expectedPayee = String(invoice.publicData.payee ?? "").toLowerCase();
         const expectedAmount = String(invoice.publicData.amount ?? "");
         const expectedToken = String(invoice.publicData.token ?? "ETH").toUpperCase();
+        const expectedTokenContract = String(invoice.publicData.tokenContract ?? "").toLowerCase();
+        const rawDecimals = Number(invoice.publicData.tokenDecimals);
+        const expectedTokenDecimals =
+          Number.isFinite(rawDecimals) && rawDecimals >= 0 && rawDecimals <= 36 ? rawDecimals : 18;
         const txFrom = String(tx.from ?? "").toLowerCase();
         const txTo = String(tx.to ?? "").toLowerCase();
         const claimedPayer = parsed.data.payer.toLowerCase();
@@ -172,6 +176,23 @@ export const Route = createFileRoute("/api/invoice-payment")({
             );
           }
         } else {
+          // For ERC-20 invoices, the invoice MUST commit to a specific
+          // token contract address. Without it, a payer could pay 1 wei
+          // of any (or a worthless fake) token and pass verification.
+          if (!/^0x[a-f0-9]{40}$/.test(expectedTokenContract)) {
+            return Response.json(
+              {
+                error: "Invoice is missing tokenContract; cannot verify an ERC-20 payment safely.",
+              },
+              { status: 422 },
+            );
+          }
+          if (txTo !== expectedTokenContract) {
+            return Response.json(
+              { error: "Transaction did not call the expected token contract" },
+              { status: 400 },
+            );
+          }
           const decoded = decodeErc20TransferData(tx.input ?? "");
           if (!decoded) {
             return Response.json(
@@ -185,24 +206,31 @@ export const Route = createFileRoute("/api/invoice-payment")({
               { status: 400 },
             );
           }
-          // Token contract sanity: tx.to must be a contract (not the payee EOA).
-          if (txTo === expectedPayee) {
+          const expectedValue = parseTokenUnits(expectedAmount, expectedTokenDecimals);
+          if (expectedValue === null) {
+            return Response.json({ error: "Invoice amount is invalid" }, { status: 422 });
+          }
+          if (decoded.amount !== expectedValue) {
             return Response.json(
-              { error: "Token transfer must call an ERC-20 contract, not the payee directly" },
+              { error: "ERC-20 transfer amount does not match invoice" },
               { status: 400 },
             );
           }
         }
 
-        const updated = await patchEncryptedDomainRecordPublicData(parsed.data.invoiceId, "invoice", {
-          status: "paid",
-          publicData: {
-            linkedTxHash: parsed.data.txHash,
-            payer: claimedPayer,
-            paidAt: new Date().toISOString(),
-            chainId: parsed.data.chainId,
+        const updated = await patchEncryptedDomainRecordPublicData(
+          parsed.data.invoiceId,
+          "invoice",
+          {
+            status: "paid",
+            publicData: {
+              linkedTxHash: parsed.data.txHash,
+              payer: claimedPayer,
+              paidAt: new Date().toISOString(),
+              chainId: parsed.data.chainId,
+            },
           },
-        });
+        );
 
         return Response.json({ ok: true, invoice: updated });
       },

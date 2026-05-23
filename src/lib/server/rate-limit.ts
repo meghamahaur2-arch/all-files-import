@@ -16,13 +16,38 @@ export type RateLimitOptions = {
   scope: string;
 };
 
+/**
+ * Picks the best available client identifier from headers. We prefer headers
+ * the platform sets that an attacker cannot forge:
+ *
+ *   1. `x-vercel-forwarded-for` — set by Vercel's edge, opaque to clients.
+ *   2. `cf-connecting-ip` — Cloudflare-only, same property.
+ *   3. The LAST hop of `x-forwarded-for` — proxies append, so the rightmost
+ *      entry is the most-recent-trusted proxy IP. The leftmost is whatever
+ *      the client claimed and is spoofable.
+ *
+ * Falling back to user-agent is purely a courtesy so bucket isolation still
+ * happens at all when the request bypasses the edge — it is not a security
+ * boundary.
+ */
 function clientKey(request: Request, scope: string) {
   const headers = request.headers;
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = headers.get("x-real-ip")?.trim();
+  const vercel = headers.get("x-vercel-forwarded-for")?.trim();
   const cfConnecting = headers.get("cf-connecting-ip")?.trim();
-  const fallback = headers.get("user-agent") ?? "anonymous";
-  const ip = cfConnecting || forwarded || realIp || fallback;
+  const realIp = headers.get("x-real-ip")?.trim();
+
+  const forwardedChain = headers.get("x-forwarded-for") ?? "";
+  const forwardedHops = forwardedChain
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  // Last hop = closest to our edge, hardest to forge.
+  const lastForwardedHop = forwardedHops.length
+    ? forwardedHops[forwardedHops.length - 1]
+    : undefined;
+
+  const fallback = `ua:${(headers.get("user-agent") ?? "anonymous").slice(0, 64)}`;
+  const ip = vercel || cfConnecting || realIp || lastForwardedHop || fallback;
   return `${scope}:${ip}`;
 }
 

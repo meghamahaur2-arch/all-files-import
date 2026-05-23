@@ -72,7 +72,11 @@
       }, 45000);
 
       function onMessage(event) {
+        // Same-window messages only — content.js (which posts these) runs
+        // in the same window context, so event.source === window AND
+        // event.origin matches the page's own origin.
         if (event.source !== window) return;
+        if (event.origin !== window.location.origin) return;
         if (event.data?.type !== "PAYMEMO_CONTEXT_READY" || event.data?.id !== id) return;
         window.clearTimeout(timeout);
         window.removeEventListener("message", onMessage);
@@ -145,7 +149,7 @@
         id,
         payload: clonePayload(payload, provider, providerLabel),
       },
-      "*",
+      window.location.origin,
     );
 
     const context = await waitForContext(id);
@@ -161,7 +165,7 @@
         method,
         result,
       },
-      "*",
+      window.location.origin,
     );
   }
 
@@ -174,7 +178,7 @@
         method,
         error: error?.message || "Wallet request rejected",
       },
-      "*",
+      window.location.origin,
     );
   }
 

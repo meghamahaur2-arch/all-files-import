@@ -17,8 +17,8 @@ import { requireWalletAuth } from "@/lib/server/wallet-auth";
 // explicit allow-* headers + an OPTIONS handler the preflight fails
 // silently and the extension's fetch() throws "Failed to fetch".
 //
-// Endpoint already auth's itself via the install token OR wallet
-// signature, so `*` for Allow-Origin is safe.
+// Every endpoint here re-authenticates per-request (install token OR
+// wallet signature), so a `*` Allow-Origin is acceptable.
 const CORS_HEADERS: Record<string, string> = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
@@ -40,59 +40,48 @@ const extensionIntentSchema = payMemoRecordSchema.extend({
 });
 
 function normalizeAddress(value: string | null | undefined) {
-  const address = String(value || "").trim().toLowerCase();
+  const address = String(value || "")
+    .trim()
+    .toLowerCase();
   return /^0x[a-f0-9]{40}$/.test(address) ? address : "";
 }
 
 /**
- * Authenticates a write to `/api/extension-intent`. A wallet's extension
- * records can be created by either:
+ * Authenticates a caller for a specific wallet address. A caller may prove
+ * ownership two ways:
  *
- *   1. The PayMemo browser extension, which sends `x-paymemo-install-token`
- *      matching a row in `extension_pairings`. This is the original auth
- *      path - used by the popup, content-script overlay, and sidepanel.
+ *   1. Install token (extension): header `x-paymemo-install-token` matches
+ *      a pairing in `extension_pairings` for the given wallet.
+ *   2. Wallet signature (dApp): headers `x-paymemo-wallet` +
+ *      `x-paymemo-signature` validate against the vault-unlock message.
  *
- *   2. The PayMemo dApp itself, which sends `x-paymemo-wallet` + the
- *      vault-unlock signature in `x-paymemo-signature`. The dApp uses
- *      this path when the user clicks "Record review" in /app/review,
- *      since the dApp has no install token of its own.
- *
- * Either is sufficient. We only require *some* form of proof that the
- * caller actually controls (or has been paired with) the from-wallet
- * once that wallet has any pairings on file. Wallets with no pairings
- * are still first-touch trusted so a brand-new extension install can
- * write its first record before the pairing is recorded.
+ * Returns ok=true only when *one of those proofs* succeeds. Unlike the
+ * previous "first-touch trust" model, an unpaired wallet is NOT treated
+ * as open — callers must establish a pairing before they can write
+ * records for that wallet.
  */
-async function ensureCallerOwnsWallet(
+async function authenticateWallet(
   request: Request,
   wallet: string,
 ): Promise<{ ok: true } | { ok: false; response: Response }> {
-  if (!wallet) return { ok: true };
+  if (!wallet) {
+    return {
+      ok: false,
+      response: Response.json({ error: "Missing wallet for authentication." }, { status: 400 }),
+    };
+  }
 
-  const pairings = await listExtensionPairings(wallet);
-  if (!pairings.length) return { ok: true };
-
-  // Path 1: extension install token
   const token = request.headers.get("x-paymemo-install-token")?.trim();
   if (token) {
     const ok = await isExtensionWalletPaired(token, wallet);
     if (ok) return { ok: true };
-    return {
-      ok: false,
-      response: Response.json(
-        { error: "Install token is not paired with this wallet." },
-        { status: 403 },
-      ),
-    };
   }
 
-  // Path 2: dApp wallet signature
   const headerWallet = request.headers.get("x-paymemo-wallet")?.toLowerCase();
   const headerSig = request.headers.get("x-paymemo-signature");
   if (headerWallet && headerSig) {
     const auth = await requireWalletAuth(request, wallet);
     if (auth.ok) return { ok: true };
-    return { ok: false, response: auth.response };
   }
 
   return {
@@ -100,25 +89,40 @@ async function ensureCallerOwnsWallet(
     response: Response.json(
       {
         error:
-          "Auth required for paired wallet. Send either x-paymemo-install-token (extension) or x-paymemo-wallet + x-paymemo-signature (dApp vault).",
+          "Auth required. Send either x-paymemo-install-token (paired with this wallet) or x-paymemo-wallet + x-paymemo-signature (dApp vault).",
       },
       { status: 401 },
     ),
   };
 }
 
+/**
+ * Bootstrap exception for first-time extension writes: if the caller
+ * presents a fresh install token that has *no* pairings yet AND the
+ * target wallet itself also has no pairings, allow the write. The next
+ * /api/extension-pair call will lock the wallet to this token from
+ * then on. This avoids a chicken-and-egg loop where the extension can't
+ * write its very first observation before pairing completes.
+ */
+async function allowFirstTouchExtensionWrite(request: Request, wallet: string) {
+  const token = request.headers.get("x-paymemo-install-token")?.trim();
+  if (!token || token.length < 24) return false;
+  const walletPairings = await listExtensionPairings(wallet);
+  if (walletPairings.length > 0) return false;
+  return true;
+}
+
 export const Route = createFileRoute("/api/extension-intent")({
   server: {
     handlers: {
-      // CORS preflight. The extension (chrome-extension:// origin) sends
-      // OPTIONS before the actual POST whenever a non-simple header like
-      // `x-paymemo-install-token` is present. Without this the browser
-      // blocks the POST and the fetch() throws "Failed to fetch".
       OPTIONS: async () => {
         return withCors(new Response(null, { status: 204 }));
       },
 
       GET: async ({ request }: { request: Request }) => {
+        const limited = checkRateLimit(request, { scope: "extension-intent-get", limit: 120 });
+        if (!limited.ok) return withCors(limited.response);
+
         const url = new URL(request.url);
         const wallets = url.searchParams.getAll("wallet").flatMap((value) =>
           value
@@ -127,14 +131,28 @@ export const Route = createFileRoute("/api/extension-intent")({
             .filter(Boolean),
         );
 
+        if (!wallets.length) {
+          return withCors(
+            Response.json(
+              { error: "Provide at least one ?wallet=0x... query parameter." },
+              { status: 400 },
+            ),
+          );
+        }
+
+        // Every requested wallet must be authenticated to the caller.
+        // We never serve records for wallets the caller hasn't proven ownership of.
+        for (const wallet of wallets) {
+          const auth = await authenticateWallet(request, wallet);
+          if (!auth.ok) return withCors(auth.response);
+        }
+
         const records = await listExtensionRecords();
-        const scoped = wallets.length
-          ? records.filter((record) => {
-              const from = normalizeAddress(record.from ?? undefined);
-              const to = normalizeAddress(record.to ?? undefined);
-              return wallets.includes(from) || wallets.includes(to);
-            })
-          : records;
+        const scoped = records.filter((record) => {
+          const from = normalizeAddress(record.from ?? undefined);
+          const to = normalizeAddress(record.to ?? undefined);
+          return (from && wallets.includes(from)) || (to && wallets.includes(to));
+        });
 
         return withCors(
           Response.json({
@@ -163,9 +181,49 @@ export const Route = createFileRoute("/api/extension-intent")({
         }
 
         const fromWallet = normalizeAddress(parsed.data.from);
-        if (fromWallet) {
-          const check = await ensureCallerOwnsWallet(request, fromWallet);
-          if (!check.ok) return withCors(check.response);
+        const toWallet = normalizeAddress(parsed.data.to);
+
+        // A record must touch at least one wallet, and the caller must
+        // authenticate as the owner of at least one of those wallets.
+        // If neither field is a wallet (e.g. `to: "contract interaction"`),
+        // require auth via the from wallet — which means from must be set.
+        const candidates = [fromWallet, toWallet].filter(Boolean);
+        if (!candidates.length) {
+          return withCors(
+            Response.json(
+              { error: "Record must include a `from` or `to` wallet address." },
+              { status: 400 },
+            ),
+          );
+        }
+
+        let authenticated = false;
+        for (const wallet of candidates) {
+          const auth = await authenticateWallet(request, wallet);
+          if (auth.ok) {
+            authenticated = true;
+            break;
+          }
+        }
+
+        // Bootstrap path: a fresh, unpaired install token can write its
+        // first record for an unpaired wallet. Locked down to ONLY the
+        // from wallet (sender), never to wallets the caller doesn't control.
+        if (!authenticated && fromWallet) {
+          const firstTouch = await allowFirstTouchExtensionWrite(request, fromWallet);
+          if (firstTouch) authenticated = true;
+        }
+
+        if (!authenticated) {
+          return withCors(
+            Response.json(
+              {
+                error:
+                  "Auth required. Pair the extension to a wallet, or call from the dApp with x-paymemo-wallet + x-paymemo-signature.",
+              },
+              { status: 401 },
+            ),
+          );
         }
 
         const record = normalizeRecord({
@@ -189,4 +247,3 @@ export const Route = createFileRoute("/api/extension-intent")({
     },
   },
 });
-

@@ -588,7 +588,10 @@ window.addEventListener("message", async (event) => {
   if (event.data?.type === "PAYMEMO_REQUEST_CONTEXT") {
     const record = await renderOverlay(event.data.payload);
     if (!record) {
-      window.postMessage({ type: "PAYMEMO_CONTEXT_READY", id: event.data.id, skipped: true }, "*");
+      window.postMessage(
+        { type: "PAYMEMO_CONTEXT_READY", id: event.data.id, skipped: true },
+        window.location.origin,
+      );
       return;
     }
 
@@ -599,7 +602,7 @@ window.addEventListener("message", async (event) => {
         id: event.data.id,
         recordId: response.record?.id,
       },
-      "*",
+      window.location.origin,
     );
   }
 
